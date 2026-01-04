@@ -1,4 +1,4 @@
-﻿<#
+<#
     Copyright (c) 2026 dmj.one
     
     This software is part of the dmj.one initiative.

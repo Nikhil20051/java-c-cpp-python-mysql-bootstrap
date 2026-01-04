@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright (c) 2026 dmj.one
  *
  * This software is part of the dmj.one initiative.
@@ -27,8 +27,8 @@
 
 /* Database configuration */
 #define DB_HOST "localhost"
-#define DB_USER "testuser"
-#define DB_PASS "testpass123"
+#define DB_USER "appuser"
+#define DB_PASS "Rg4%e1aCQZ^laRzR"
 #define DB_NAME "testdb"
 #define DB_PORT 3306
 

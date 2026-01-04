@@ -1,3 +1,7 @@
+-- Database Setup Script
+-- Generated: 01/05/2026 01:23:19
+-- User: appuser
+
 -- Create test database
 CREATE DATABASE IF NOT EXISTS testdb;
 USE testdb;
@@ -55,9 +59,10 @@ INSERT INTO orders (user_id, product_id, quantity, total_price, status) VALUES
     (2, 2, 2, 39.98, 'shipped'),
     (3, 3, 1, 49.99, 'processing');
 
--- Create test user for applications
-CREATE USER IF NOT EXISTS 'testuser'@'localhost' IDENTIFIED BY 'testpass123';
-GRANT ALL PRIVILEGES ON testdb.* TO 'testuser'@'localhost';
+-- Create/Update application user
+DROP USER IF EXISTS 'appuser'@'localhost';
+CREATE USER 'appuser'@'localhost' IDENTIFIED BY 'Rg4%e1aCQZ^laRzR';
+GRANT ALL PRIVILEGES ON testdb.* TO 'appuser'@'localhost';
 FLUSH PRIVILEGES;
 
 SELECT 'Database setup completed successfully!' AS status;

@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright (c) 2026 dmj.one
  *
  * This software is part of the dmj.one initiative.
@@ -34,8 +34,8 @@ using namespace std;
 
 /* Database configuration */
 const string DB_HOST = "localhost";
-const string DB_USER = "testuser";
-const string DB_PASS = "testpass123";
+const string DB_USER = "appuser";
+const string DB_PASS = "Rg4%e1aCQZ^laRzR";
 const string DB_NAME = "testdb";
 const int DB_PORT = 3306;
 

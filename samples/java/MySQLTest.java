@@ -24,8 +24,8 @@ import java.util.Scanner;
 public class MySQLTest {
     // Database configuration
     private static final String DB_URL = "jdbc:mysql://localhost:3306/testdb";
-    private static final String DB_USER = "testuser";
-    private static final String DB_PASSWORD = "testpass123";
+    private static final String DB_USER = "appuser";
+    private static final String DB_PASSWORD = "Rg4%e1aCQZ^laRzR";
 
     private Connection connection;
 
