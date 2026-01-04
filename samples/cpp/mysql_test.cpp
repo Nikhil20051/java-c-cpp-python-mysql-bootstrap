@@ -26,7 +26,6 @@
 #include <string>
 #include <vector>
 
-
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -169,7 +168,7 @@ public:
   bool connect() {
     printHeader("Connecting to MySQL Database");
 
-    if (!db->connect(DB_HOST, DB_USER, DB_PASS, DB_NAME, DB_PORT)) {
+    if (!db->connect(DB_HOST, DB_USER, DB_PASSWORD, DB_NAME, DB_PORT)) {
       return false;
     }
 

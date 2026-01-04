@@ -255,8 +255,9 @@ function Update-SampleFiles {
     $javaFile = Join-Path $ProjectRoot "samples\java\MySQLTest.java"
     if (Test-Path $javaFile) {
         $content = Get-Content $javaFile -Raw
-        $content = $content -replace 'private static final String DB_USER = "[^"]*"', "private static final String DB_USER = `"$username`""
-        $content = $content -replace 'private static final String DB_PASSWORD = "[^"]*"', "private static final String DB_PASSWORD = `"$password`""
+        # Matches: getEnv("DB_USER", "value")
+        $content = $content -replace 'getEnv\("DB_USER", "[^"]*"\)', "getEnv(`"DB_USER`", `"$username`")"
+        $content = $content -replace 'getEnv\("DB_PASSWORD", "[^"]*"\)', "getEnv(`"DB_PASSWORD`", `"$password`")"
         $content | Set-Content $javaFile -NoNewline
         Write-Success "Updated: samples\java\MySQLTest.java"
     }
@@ -265,8 +266,9 @@ function Update-SampleFiles {
     $pythonFile = Join-Path $ProjectRoot "samples\python\mysql_test.py"
     if (Test-Path $pythonFile) {
         $content = Get-Content $pythonFile -Raw
-        $content = $content -replace "'user': '[^']*'", "'user': '$username'"
-        $content = $content -replace "'password': '[^']*'", "'password': '$password'"
+        # Matches: os.getenv('DB_USER', 'value')
+        $content = $content -replace "os.getenv\('DB_USER', '[^']*'\)", "os.getenv('DB_USER', '$username')"
+        $content = $content -replace "os.getenv\('DB_PASSWORD', '[^']*'\)", "os.getenv('DB_PASSWORD', '$password')"
         $content | Set-Content $pythonFile -NoNewline
         Write-Success "Updated: samples\python\mysql_test.py"
     }
@@ -275,18 +277,21 @@ function Update-SampleFiles {
     $cppFile = Join-Path $ProjectRoot "samples\cpp\mysql_test.cpp"
     if (Test-Path $cppFile) {
         $content = Get-Content $cppFile -Raw
-        $content = $content -replace 'const string DB_USER = "[^"]*"', "const string DB_USER = `"$username`""
-        $content = $content -replace 'const string DB_PASS = "[^"]*"', "const string DB_PASS = `"$password`""
+        # Matches: getEnv("DB_USER", "value")
+        $content = $content -replace 'getEnv\("DB_USER", "[^"]*"\)', "getEnv(`"DB_USER`", `"$username`")"
+        # Matches DB_PASSWORD now (was DB_PASS)
+        $content = $content -replace 'getEnv\("DB_PASSWORD", "[^"]*"\)', "getEnv(`"DB_PASSWORD`", `"$password`")"
         $content | Set-Content $cppFile -NoNewline
         Write-Success "Updated: samples\cpp\mysql_test.cpp"
     }
     
-    # Update C sample if it exists
+    # Update C sample
     $cFile = Join-Path $ProjectRoot "samples\c\mysql_test.c"
     if (Test-Path $cFile) {
         $content = Get-Content $cFile -Raw
-        $content = $content -replace '#define DB_USER "[^"]*"', "#define DB_USER `"$username`""
-        $content = $content -replace '#define DB_PASS "[^"]*"', "#define DB_PASS `"$password`""
+        # Matches: const char* DEFAULT_USER = "value";
+        $content = $content -replace 'const char\* DEFAULT_USER = "[^"]*";', "const char* DEFAULT_USER = `"$username`";"
+        $content = $content -replace 'const char\* DEFAULT_PASS = "[^"]*";', "const char* DEFAULT_PASS = `"$password`";"
         $content | Set-Content $cFile -NoNewline
         Write-Success "Updated: samples\c\mysql_test.c"
     }
