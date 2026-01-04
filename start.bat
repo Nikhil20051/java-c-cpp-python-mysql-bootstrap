@@ -25,7 +25,8 @@ echo   5. Verify System (Check all components)
 echo   6. Run Tests (Validate languages with samples)
 echo   7. Uninstall Everything
 echo   8. Uninstall 'd1run' Only
-echo   9. Exit
+echo   9. Auto-Push Monitor (Failsafe Backup)
+echo   10. Exit
 echo.
 echo   NOTE: After Option 1, restart your PC. Then 'd1run file.cpp'
 echo         will work from ANY new terminal!
@@ -33,7 +34,7 @@ echo.
 echo ========================================================
 :MENU_LOOP
 set "choice="
-set /p "choice=Select an option (1-9): "
+set /p "choice=Select an option (1-10): "
 
 if not defined choice goto MENU
 if "%choice%"=="1" goto CHECK_UPDATE_THEN_INSTALL
@@ -44,7 +45,8 @@ if "%choice%"=="5" goto VERIFY
 if "%choice%"=="6" goto TEST
 if "%choice%"=="7" goto UNINSTALL_ALL
 if "%choice%"=="8" goto UNINSTALL_GLOBAL
-if "%choice%"=="9" goto EXIT
+if "%choice%"=="9" goto MONITOR
+if "%choice%"=="10" goto EXIT
 
 echo.
 echo   [ERROR] Invalid selection: %choice%
@@ -249,6 +251,17 @@ cls
 echo [INFO] Uninstalling d1run...
 powershell -ExecutionPolicy Bypass -File "%~dp0scripts\install-d1run-global.ps1" -Uninstall
 pause
+goto MENU
+
+:MONITOR
+cls
+echo ========================================================
+echo   AUTO-PUSH MONITOR
+echo ========================================================
+echo.
+echo   [INFO] Launching the Auto-Push Monitor...
+echo.
+call "%~dp0monitor.bat"
 goto MENU
 
 :EXIT

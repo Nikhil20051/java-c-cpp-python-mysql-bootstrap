@@ -54,13 +54,15 @@ A dedicated daemon.
 ```text
 /
 ├── .github/          # CI/CD Workflows (GitHub Actions)
+├── docs/             # Technical Documentation (Manual, Architecture, etc.)
 ├── database/         # SQL Initialization scripts
 ├── lib/              # JDBC JARs, C++ Headers (if portable)
 ├── samples/          # Playground for User Code
 ├── scripts/          # The Logic Core (PS1)
 │   ├── auto-push-monitor/
 │   └── ...
-├── start.bat         # User Entry Point
+├── start.bat         # User Entry Point (The Dashboard)
+├── GETTING_STARTED.md # Your first guide
 └── LICENSE           # MIT License
 ```
 

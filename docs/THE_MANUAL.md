@@ -68,7 +68,7 @@ Your environment comes with a production-grade MySQL Server.
 If you mess up your data (which you will, that's part of learning), you can wipe the slate clean.
 
 1.  Run `start.bat`.
-2.  Select **Option 8 (Reset MySQL Database)**.
+2.  Select **Option 4 (Setup Database)**.
 3.  This drops all schemas and re-initializes a fresh "test_db".
 
 ---
@@ -81,7 +81,7 @@ Never say this again.
 The **Auto-Push Monitor** is your safety net. It runs in the background while you work.
 
 ### How it works
-1.  **Activates**: You turn it on via `start.bat` (Option 7) or the `monitor.bat` shortcut.
+1.  **Activates**: You turn it on via `start.bat` (**Option 9**) or by running `scripts\launch-monitor.bat`.
 2.  **Watches**: It observes the folder `samples` (or your chosen project folder).
 3.  **Detects**: It counts the lines of code you change.
 4.  **Acts**: once you have changed **500 lines** (configurable), it automatically:
@@ -98,11 +98,12 @@ The **Auto-Push Monitor** is your safety net. It runs in the background while yo
 Stay organized. The bootstrap expects a certain order, though you are free to roam.
 
 *   `\root`
-    *   `\start.bat`: Your control center.
-    *   `\monitor.bat`: Quick launch for the auto-saver.
-    *   `\samples`: Place your code here to test.
-    *   `\scripts`: The engine room (PowerShell scripts).
-    *   `\lib`: Libraries and dependencies.
+    *   `start.bat`: Your control center.
+    *   `GETTING_STARTED.md`: Your first guide.
+    *   `docs\`: Deep documentation (including this manual).
+    *   `samples\`: Place your code here to test.
+    *   `scripts\`: The engine room (PowerShell scripts).
+    *   `lib\`: Libraries and dependencies.
 
 ## Advanced: Passing Arguments
 

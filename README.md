@@ -57,11 +57,11 @@ No flags. No configuration. Pure focus.
 Dive deeper into the ecosystem. Use the guides below to master your tools.
 
 *   [**Getting Started**](GETTING_STARTED.md): The full unboxing and installation guide.
-*   [**The Manual**](THE_MANUAL.md): How to write, compile, and run code with `d1run`.
-*   [**Architecture**](ARCHITECTURE.md): A look under the hood at the engineering.
-*   [**Troubleshooting**](TROUBLESHOOTING.md): Solutions for common issues.
-*   [**FAQ**](FAQ.md): Why we made the choices we made.
-*   [**Features**](FEATURES.md): A complete capability list.
+*   [**The Manual**](docs/THE_MANUAL.md): How to write, compile, and run code with `d1run`.
+*   [**Architecture**](docs/ARCHITECTURE.md): A look under the hood at the engineering.
+*   [**Troubleshooting**](docs/TROUBLESHOOTING.md): Solutions for common issues.
+*   [**FAQ**](docs/FAQ.md): Why we made the choices we made.
+*   [**Features**](docs/FEATURES.md): A complete capability list.
 
 ## Your Safety Net
 

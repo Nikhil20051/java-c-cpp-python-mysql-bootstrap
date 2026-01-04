@@ -74,4 +74,4 @@ If you see this, you are ready.
 ## Next Steps
 
 Now that you have the power, you need to know how to wield it.
-Proceed to [**The Manual**](THE_MANUAL.md) to learn how to write, compile, and execute code with our unified engine.
+Proceed to [**The Manual**](docs/THE_MANUAL.md) to learn how to write, compile, and execute code with our unified engine.
