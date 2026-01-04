@@ -27,3 +27,7 @@ Desktop.ini
 # Logs
 *.log
 logs/
+
+# Testing
+*.wsb
+TEST_SANDBOX.bat
