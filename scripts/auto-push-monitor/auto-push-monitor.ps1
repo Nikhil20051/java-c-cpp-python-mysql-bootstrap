@@ -197,7 +197,7 @@ function Invoke-AutoPush {
             $fileList = $fileList.Substring(0, 97) + "..."
         }
         
-        $commitMessage = "🛡️ [AUTO-PRESERVE] High-volume change detected ($TotalChanges lines)`n`nSystem automatically pushed these changes to ensure safety during major refactoring.`n`nFiles Affected: $($ChangedFiles.Count) files including $fileList`nTimestamp: $timestamp"
+        $commitMessage = "[AUTO-PRESERVE] High-volume change detected ($TotalChanges lines)`n`nSystem automatically pushed these changes to ensure safety during major refactoring.`n`nFiles Affected: $($ChangedFiles.Count) files including $fileList`nTimestamp: $timestamp"
 
         $commitResult = git -c "user.name=$BotName" -c "user.email=$BotEmail" commit -m $commitMessage 2>&1
         

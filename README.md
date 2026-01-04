@@ -1,112 +1,92 @@
-# Universal Code Runner & Dev Environment Bootstrap
-
-**Everything you need to code in Java, C, C++, Python, and MySQL on Windows 11.**
-
-This project does two things:
-1.  **Sets up your computer**: One-click installation of all development tools.
-2.  **Runs your code**: A universal tool (`d1run`) to run any file without complex commands.
+# 🚀 Universal Bootstrap: The Ultimate Developer Experience
+> *“It just works. Everything you need to code in Java, C, C++, Python, and MySQL. One click. Zero headache.”*
 
 ---
 
-## 🚀 Quick Start (Reading Time: 30 seconds)
+## 🛑 The Problem: Setting Up is a Nightmare
+You want to code. You don't want to spend hours debugging environment variables, fixing `PATH` errors, installing five different compilers, and troubleshooting why MySQL isn't connecting to Python. 
 
-### 1. Download & Install
-1.  Download this project and unzip it.
-2.  Double-click **`start.bat`**.
-3.  Select **Option 1** (`Install Complete Environment`).
-4.  Wait for it to finish, then restart your computer.
+The traditional way is broken. It’s boring, frustrating, and a waste of your creative potential.
 
-### 2. Run Your First Code
-After restarting, open a terminal (Command Prompt or PowerShell) and type:
+## ✨ The Solution: Universal Bootstrap
+We’ve built the **iPhone of development environments**. A fully integrated, seamless, and beautiful system that installs effectively instantly and manages itself. It transforms a fresh Windows machine into a professional engineering workstation in minutes.
 
-```powershell
-d1run hello.py       # Runs Python
-d1run app.java       # Runs Java
-d1run main.c         # Runs C
-d1run script.js      # Runs Node.js
-```
+### 💎 Unique Value Propositions
+> **[👉 View Full Feature List](FEATURES.md)**
 
-**That's it! You are ready to code.**
+#### 1. ⚡ One-Click Ecosystem
+Double-click `start.bat`. That’s it. We handle the rest.
+We install and configure:
+- **Java Development Kit** (Latest OpenJDK)
+- **Python** (Latest or 3.8 - your choice) 🐍
+- **C/C++ Chain** (MinGW-w64 GCC/G++) 🔨
+- **MySQL Server (Latest)** (Fully initialized service) 🗄️
+- **VS Code** (The best editor) 💻
+- **Git** (Version control) 🌳
 
----
+#### 2. 🔮 `d1run`: The Only Command You Need
+Forget `javac`, `g++`, `python`, `node`. We built **`d1run`**, a universal runner that intelligently understands your code.
+- **Java?** It auto-compiles and finds your main class.
+- **C++?** It auto-links valid libraries (even MySQL!).
+- **Python?** It runs instantly.
+- **SQL?** It executes queries directly against your local database.
 
-## 🛠️ The `start.bat` Menu
+**Just type:** `d1run my_script.any`
 
-The **`start.bat`** file in the root folder is your main control center. Double-click it to see this menu:
+#### 3. 🛡️ Self-Updates & Resilience
+This system is alive. Every time you run the installer, it checks our central repository for the latest improvements. It updates itself without you needing to know Git commands. It’s always fresh.
 
-1.  **FULL INSTALL** ⭐: Installs EVERYTHING in one step:
-    - Java, GCC (C), G++ (C++), Python, MySQL Server, Git, VS Code
-    - `d1run` universal code runner (installed globally)
-    - MySQL Workbench (optional - you'll be asked)
-    - **Automatically checks for updates before installing!**
-    - **After install, just restart and code!**
-2.  **Check for Updates** 🔄: Downloads the latest version from GitHub (no Git required!).
-3.  **Install 'd1run' Globally Only**: Makes the `d1run` command work in any folder (if already have tools installed).
-4.  **Setup Database**: Creates a sample MySQL database (`testdb`) with data.
-5.  **Verify Installation**: Checks if everything is installed correctly.
-6.  **Run Tests**: Runs sample programs in all languages to ensure they work.
-7.  **Uninstall Everything**: Removes all tools installed by this project.
-8.  **Uninstall 'd1run' Only**: Removes just the global `d1run` command.
+#### 4. 🤖 Code Preservation Bot (Bonus!)
+Includes a powerful Auto-Push Monitor. Type `apm -Start` in any directory to watch it. If you modify more than 500 lines of code, it **automatically commits and pushes** your work to GitHub as a bot, ensuring you never lose significant progress.
 
 ---
 
-## 🔄 Auto-Update Feature
+## 🚀 How to Start (The 30-Second Guide)
 
-This project includes a built-in auto-update mechanism that works **without Git**:
+1. **Download & Extract**
+   Grab this project folder. Put it anywhere (e.g., `D:\MyCode`).
 
-- **Automatic Check**: When you select Option 1, it automatically checks if there's a newer version available.
-- **Manual Check**: Use Option 2 to check for and install updates manually.
-- **No Git Required**: Updates are downloaded directly from GitHub using HTTP - no need to install Git!
-- **Backup First**: Before updating, your existing files are backed up in case you need to rollback.
-- **User Confirmation**: You're always asked before downloading updates.
+2. **Run `start.bat`**
+   Double-click the file. You will see a beautiful menu.
+   - Select **Option 1: FULL INSTALL**.
+   - Watch the magic happen.
+   - **restart your PC** to lock in the environment variables.
 
-To check for updates at any time, just run `start.bat` and select Option 2.
-
-
----
-
-## ⚡ Universal Code Runner (`d1run`)
-
-The star of this show is **`d1run`**. It automatically detects your file language, compiles it (if needed), links necessary libraries (like MySQL), and runs it.
-
-**Usage:**
-```powershell
-d1run <filename> [arguments]
-```
-
-**Examples:**
-```powershell
-d1run myscript.py            # Python
-d1run MyClass.java           # Java (Auto-compiles & runs)
-d1run program.cpp            # C++ (Auto-links MySQL if needed)
-d1run server.js              # Node.js
-d1run query.sql              # SQL (Runs directly in MySQL)
-```
-
-**Features:**
-*   **Automatic Compilation**: You don't need to run `javac` or `gcc` manually.
-*   **Automatic MySQL Linking**: If your C/C++ code includes `<mysql.h>`, `d1run` automatically links the libraries.
-*   **Smart Java**: It finds the `public class` name automatically.
-*   **Clean**: It cleans up `.class` and `.exe` files after running (unless you use `-KeepExe`).
+3. **Restart & Code**   
+   Once you have restarted your PC, open any terminal (CMD/PowerShell) and type:
+   ```powershell
+   d1run hello.py
+   ```
 
 ---
 
-## 📂 Project Structure
+## 🎮 The Control Center (`start.bat`)
+Your dashboard for everything.
 
-We keep it clean. Here is what matters:
-
-*   **`start.bat`**: The only file you need to run to manage everything.
-*   **`scripts/`**: Contains the logic. You don't need to touch this unless you are customize things.
-*   **`samples/`**: Example code for every language (Check these out!).
-*   **`database/`**: SQL scripts for the test database.
-*   **`lib/`**: External libraries (like MySQL Connectors).
+| Option | Feature | Description |
+| :--- | :--- | :--- |
+| **1** | **FULL INSTALL** | Installs Java, C/C++, Python, MySQL, Git, VS Code + `d1run`. |
+| **2** | **Update Software** | Fetches the latest version of this bootstrap from the cloud. |
+| **3** | **Install `d1run`** | Only installs the magic runner (lightweight mode). |
+| **4** | **Setup Database** | Re-initializes MySQL with a fresh `testdb` and sample data. |
+| **5** | **Verify System** | Runs a diagnostic check on all tools. |
+| **6** | **Run Tests** | Compiles and runs sample code in every language. |
 
 ---
 
-## 📝 License & Attribution
+## 🏆 For The Technical Mind
+We didn't cut corners. This is professional-grade engineering.
+- **Idempotence**: Run the installer 100 times; it won't break anything. It only fixes what's missing.
+- **Sandbox Ready**: Fully tested in Windows Sandbox for isolated deployments.
+- **Non-Destructive**: We respect your existing PATH entries while ensuring ours take precedence where needed.
+- **Production MySQL**: We install the real MySQL Server service, not a toy implementation.
 
-This project by **Nikhil Bhardwaj** is a part of **[dmj.one](https://dmj.one)**'s educational initiative.
+## 🤝 Open Source & Attribution
+**Built with ❤️ for the [dmj.one](https://dmj.one) initiative.**
+*Created by Nikhil Bhardwaj.*
 
-Licensed under the **MIT License**. You are free to use, modify, and distribute this software.
+Released under the **MIT License**.
+*Copyright © 2026 dmj.one. All rights reserved.*
 
-Copyright (c) 2026 dmj.one
+---
+> *Programming shouldn't be hard. Setup shouldn't be boring. Welcome to the future.*

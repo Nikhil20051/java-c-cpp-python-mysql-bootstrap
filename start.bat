@@ -15,13 +15,13 @@ echo   UNIVERSAL CODE RUNNER ^& DEV ENVIRONMENT - SETUP
 echo ========================================================
 echo.
 echo   1. FULL INSTALL (Recommended - Installs Everything + d1run)
-echo      [Java, C, C++, Python, MySQL, Git, VS Code + d1run global]
+echo      [Java, C, C++, Python, MySQL, Git, VS Code + d1run global + APM]
 echo      [Auto-checks for updates before installation]
 echo.
-echo   2. Check for Updates (Download latest version)
-echo   3. Install 'd1run' Globally Only
-echo   4. Setup Database (Initialize MySQL Schema)
-echo   5. Verify Installation (Check all components)
+echo   2. Update Software (Check for updates)
+echo   3. Install 'd1run' (Global Runner Only)
+echo   4. Setup Database (Re-Initialize MySQL Schema)
+echo   5. Verify System (Check all components)
 echo   6. Run Tests (Validate languages with samples)
 echo   7. Uninstall Everything
 echo   8. Uninstall 'd1run' Only

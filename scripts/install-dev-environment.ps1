@@ -92,6 +92,33 @@ Write-Host "This process may take 15-30 minutes depending on your internet speed
 Write-Host ""
 
 # ============================================
+# STEP 0: Ensure Configuration Files & Credentials
+# ============================================
+Write-Header "Step 0: Initializing Configuration & Credentials"
+
+$ensureConfigScript = Join-Path $PSScriptRoot "ensure-config-files.ps1"
+if (Test-Path $ensureConfigScript) {
+    Write-Info "Running configuration check..."
+    & $ensureConfigScript
+}
+
+# Load credentials for use in script
+$credsFile = Join-Path $ProjectRoot ".credentials.json"
+if (Test-Path $credsFile) {
+    try {
+        $Global:Creds = Get-Content $credsFile | ConvertFrom-Json
+        Write-Success "Loaded secure credentials for user '$($Global:Creds.username)'"
+    }
+    catch {
+        Write-Info "Could not load credentials. Using defaults."
+        $Global:Creds = @{ username = "testuser"; password = "testpass123"; database = "testdb" }
+    }
+}
+else {
+    $Global:Creds = @{ username = "testuser"; password = "testpass123"; database = "testdb" }
+}
+
+# ============================================
 # STEP 1: Install Chocolatey Package Manager
 # ============================================
 Write-Header "Step 1: Installing Chocolatey Package Manager"
@@ -382,26 +409,45 @@ if ($hasInclude -and $hasLib) {
     $env:MYSQL_INCLUDE = $includePath
     $env:MYSQL_LIB = $libPath
     
-    Write-Success "MySQL C/C++ connector paths configured!"
-    Write-Info "MYSQL_INCLUDE: $includePath"
-    Write-Info "MYSQL_LIB: $libPath"
+    Write-Success "MySQL C/C++ connector paths configured via MySQL Server!"
 }
 else {
-    # The Chocolatey MySQL package may not include development headers
-    # Point to alternative paths or inform user
-    Write-Info "MySQL development headers not found in standard location."
-    Write-Info "This is normal for the minimal MySQL installation."
+    # Headers missing from Server install. Download Connector/C manually.
+    Write-Info "MySQL development headers not found in server directory."
+    Write-Info "Downloading MySQL Connector/C to ensure C/C++ support..."
     
-    # Set placeholder paths - sample code uses socket-based connection which works without headers
-    [System.Environment]::SetEnvironmentVariable("MYSQL_INCLUDE", $includePath, "Machine")
-    [System.Environment]::SetEnvironmentVariable("MYSQL_LIB", $libPath, "Machine")
-    $env:MYSQL_INCLUDE = $includePath
-    $env:MYSQL_LIB = $libPath
+    $cConnectorUrl = "https://downloads.mysql.com/archives/get/p/19/file/mysql-connector-c-6.1.11-winx64.zip"
+    $cConnectorZip = "$connectorCPath\mysql-connector-c.zip"
+    $cConnectorExDir = "$connectorCPath\extracted"
     
-    Write-Info "For C/C++ MySQL development with native API, you may need to:"
-    Write-Info "  1. Download MySQL Connector/C from: https://dev.mysql.com/downloads/connector/c/"
-    Write-Info "  2. Or use the included Python/Java connectors instead"
-    Write-Success "MySQL C/C++ environment variables set (paths may be created later)."
+    try {
+        if (!(Test-Path $cConnectorExDir)) {
+            Invoke-WebRequest -Uri $cConnectorUrl -OutFile $cConnectorZip -UseBasicParsing
+            Expand-Archive -Path $cConnectorZip -DestinationPath $cConnectorExDir -Force
+            Remove-Item $cConnectorZip -Force
+        }
+        
+        # Find the inner folder
+        $innerFolder = Get-ChildItem -Path $cConnectorExDir -Directory | Select-Object -First 1
+        if ($innerFolder) {
+            $newInclude = "$($innerFolder.FullName)\include"
+            $newLib = "$($innerFolder.FullName)\lib"
+            
+            [System.Environment]::SetEnvironmentVariable("MYSQL_INCLUDE", $newInclude, "Machine")
+            [System.Environment]::SetEnvironmentVariable("MYSQL_LIB", $newLib, "Machine")
+            $env:MYSQL_INCLUDE = $newInclude
+            $env:MYSQL_LIB = $newLib
+            
+            Write-Success "MySQL Connector/C downloaded and configured!"
+        }
+        else {
+            throw "Extraction failed"
+        }
+    }
+    catch {
+        Write-Error "Could not download/configure MySQL Connector/C: $_"
+        Write-Info "C/C++ MySQL compilation might require manual setup."
+    }
 }
 
 # ============================================
@@ -582,10 +628,18 @@ Write-Success "Environment variables refreshed!"
 Write-Header "Step 11: Setting Up Test Database"
 
 # Create SQL setup script
+$dbUser = $Global:Creds.username
+$dbPass = $Global:Creds.password
+$dbName = $Global:Creds.database
+
 $sqlSetup = @"
+-- Database Setup Script
+-- Generated: $(Get-Date)
+-- User: $dbUser
+
 -- Create test database
-CREATE DATABASE IF NOT EXISTS testdb;
-USE testdb;
+CREATE DATABASE IF NOT EXISTS $dbName;
+USE $dbName;
 
 -- Drop tables if they exist to ensure clean state
 DROP TABLE IF EXISTS orders;
@@ -640,16 +694,17 @@ INSERT INTO orders (user_id, product_id, quantity, total_price, status) VALUES
     (2, 2, 2, 39.98, 'shipped'),
     (3, 3, 1, 49.99, 'processing');
 
--- Create test user for applications
-CREATE USER IF NOT EXISTS 'testuser'@'localhost' IDENTIFIED BY 'testpass123';
-GRANT ALL PRIVILEGES ON testdb.* TO 'testuser'@'localhost';
+-- Create/Update application user
+DROP USER IF EXISTS '$dbUser'@'localhost';
+CREATE USER '$dbUser'@'localhost' IDENTIFIED BY '$dbPass';
+GRANT ALL PRIVILEGES ON $dbName.* TO '$dbUser'@'localhost';
 FLUSH PRIVILEGES;
 
 SELECT 'Database setup completed successfully!' AS status;
 "@
 
 $sqlSetup | Out-File -FilePath "$ProjectRoot\database\setup-database.sql" -Encoding ASCII -NoNewline
-Write-Success "Database setup script created!"
+Write-Success "Database setup script created with secure credentials!"
 
 # Automatically initialize database
 Write-Info "Attempting to initialize MySQL database..."
@@ -691,6 +746,26 @@ else {
 }
 
 # ============================================
+# STEP 12.5: Install Auto-Push Monitor Globally
+# ============================================
+Write-Header "Step 12.5: Installing Auto-Push Monitor"
+
+Write-Info "Installing 'apm' tool globally..."
+$apmInstaller = Join-Path $PSScriptRoot "auto-push-monitor\install-global.ps1"
+if (Test-Path $apmInstaller) {
+    try {
+        & $apmInstaller
+        Write-Success "Auto-Push Monitor installed! Run 'apm -Start' to use it."
+    }
+    catch {
+        Write-Info "APM installation encountered an issue: $_"
+    }
+}
+else {
+    Write-Info "Auto-Push Monitor installer not found. Skipping."
+}
+
+# ============================================
 # STEP 13: Verify Installation
 # ============================================
 Write-Header "Step 13: Verifying Installation"
@@ -727,6 +802,7 @@ Write-Host "  [*] MySQL Connectors (Java, Python)" -ForegroundColor White
 Write-Host "  [*] Git" -ForegroundColor White
 Write-Host "  [*] Visual Studio Code" -ForegroundColor White
 Write-Host "  [*] d1run - Universal Code Runner (GLOBAL)" -ForegroundColor White
+Write-Host "  [*] Auto-Push Monitor ('apm' command)" -ForegroundColor White
 Write-Host ""
 
 Write-Host "d1run Usage:" -ForegroundColor Green
@@ -738,11 +814,11 @@ Write-Host "    d1run test.c             # Compile and run C" -ForegroundColor G
 Write-Host "    d1run query.sql          # Execute SQL in MySQL" -ForegroundColor Gray
 Write-Host ""
 
-Write-Host "Database Credentials:" -ForegroundColor Green
+Write-Host "Database Credentials (Securely Generated):" -ForegroundColor Green
 Write-Host "  - Root User: root (No Password)" -ForegroundColor White
-Write-Host "  - App User:  testuser" -ForegroundColor White
-Write-Host "  - Password:  testpass123" -ForegroundColor White
-Write-Host "  - Database:  testdb" -ForegroundColor White
+Write-Host "  - App User:  $($Global:Creds.username)" -ForegroundColor White
+Write-Host "  - Password:  $($Global:Creds.password)" -ForegroundColor White
+Write-Host "  - Database:  $($Global:Creds.database)" -ForegroundColor White
 Write-Host ""
 
 Write-Host "IMPORTANT:" -ForegroundColor Yellow
