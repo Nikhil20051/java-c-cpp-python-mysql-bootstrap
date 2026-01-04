@@ -1,94 +1,40 @@
-# ✨ Comprehensive Feature List
-> *The complete breakdown of everything the Universal Bootstrap system can do.*
+# Capabilities.
 
-This document serves as the master tracking list for all capabilities of the **Universal Bootstrap** environment.
+**It does everything, so you don't have to.**
 
----
+We designed the Universal Bootstrap to be the only tool you need. It is not just about installing software; it is about creating a perfect environment for creation.
 
-## 🛠️ Core Installation & Environment (`start.bat`)
-The installer is idempotent and handles the complete setup of a professional engineering workstation.
+## The Foundation
+*The core technologies that power your work.*
 
-- **Automated Toolchain Setup**
-  - [x] **Java Development Kit**: Installs Latest OpenJDK (automatically sets `JAVA_HOME`).
-  - [x] **Python Environment**: Interactive choice between **Latest Python** or **Python 3.8** (legacy compatibility).
-  - [x] **C/C++ Compiler**: Installs MinGW-w64 (GCC/G++) for native compilation.
-  - [x] **MySQL Server**: Installs full MySQL Server (not just client).
-  - [x] **MySQL Workbench**: Optional installation of the GUI database manager.
-  - [x] **Visual Studio Code**: Installs the latest VS Code editor.
-  - [x] **Git**: Installs Git version control system.
-  - [x] **Build Tools**: Adds `make`, `gcc`, `g++` to global PATH.
+*   **Java**: Enterprise-grade OpenJDK. Configured correctly.
+*   **Python**: Your choice of the latest runtime or version 3.8.
+*   **C / C++**: MinGW-w64 GCC & G++. Native. Fast.
+*   **MySQL**: Full server installation. Running as a resilient background service.
+*   **The Editor**: Visual Studio Code. The industry standard.
+*   **Version Control**: Git. Essential for modern development.
 
-- **Intelligent Configuration**
-  - [x] **Path Management**: Automatically audits and refreshes User and Machine `PATH` variables.
-  - [x] **Service Management**: Auto-initializes, starts, and verifies the MySQL Windows Service.
-  - [x] **Dependency Resolution**: Automatically downloads missing MySQL C/C++ headers if the server package omits them.
-  - [x] **Python Dependencies**: Auto-installs `mysql-connector-python` and `pymysql` via pip.
-  - [x] **Java Libraries**: Downloads `mysql-connector-j` jar for JDBC connectivity.
+## The Intelligence: `d1run`
+*One command to rule them all.*
 
----
+We realized that switching between `javac`, `g++`, and `python` breaks your flow. So we unified them. `d1run` is context-aware.
 
-## 🔮 `d1run`: Universal Code Runner
-A global command-line tool (`d1run`) to execute code in any language instantly.
+*   **Smart Compilation**: It doesn't just compile; it optimizes. C++ code is statically linked by default—build once, run anywhere.
+*   **Auto-Linking**: It sees `include <mysql.h>` and automatically links the database libraries. You don't do a thing.
+*   **Error Reporting**: It reads the cryptic compiler errors and translates them into human-readable fix suggestions.
 
-- **Universal Language Support**
-  - [x] **Python** (`.py`): Runs with the configured system Python.
-  - [x] **Java** (`.java`): Auto-compiles and runs.
-    - *Smart Class Detection*: Finds the `public class` name even if it doesn't match the filename (warns user).
-    - *Auto-Classpath*: Automatically includes MySQL JDBC drivers if `import java.sql` is detected.
-  - [x] **C** (`.c`) & **C++** (`.cpp`): Compiles Single-File execution.
-    - *Static Linking*: Defaults to `-static` builds (creates portable `.exe` files that run anywhere).
-    - *Release Mode*: Compiles with `-O2` and `-s` (strip symbols) for performance.
-    - *Auto-Link MySQL*: Automatically links `libmysqlclient` if `mysql.h` usage is detected.
-  - [x] **JavaScript** (`.js`): Executes via Node.js.
-  - [x] **SQL** (`.sql`): Executes directly against the local MySQL instance.
-  - [x] **Shell Scripts**: Runs `.bat`, `.cmd`, and `.ps1` files transparently.
+## The Guardian: Auto-Push Monitor
+*Your work, immortalized.*
 
-- **Advanced Execution Features**
-  - [x] **Argument Passing**: Pass arguments directly to your script (e.g., `d1run app.py arg1 arg2`).
-  - [x] **Error Intelligence**: Parses raw compiler output to generate readable **Error Reports** with line numbers and specific fix suggestions.
-  - [x] **Clean Mode**: `d1run file.c -Clean` runs the code and immediately deletes the generated `.exe`.
-  - [x] **Database Context**: Supports `-MySQLUser`, `-MySQLPass`, `-MySQLDatabase` flags for SQL execution.
+*   **Silent Watcher**: A background daemon that monitors every keystroke difference.
+*   **Intelligent Threshold**: Triggers a save only when you've done significant work (default: 500 lines).
+*   **Bot Identity**: Uses a distinct "Code-Ninja" identity, keeping your personal commit history clean and professional.
 
----
+## The Ecosystem
+*A living, breathing system.*
 
-## 🤖 `apm`: Auto-Push Monitor
-A background daemon ("DMJ.one Code-Ninja") that ensures work is never lost.
+*   **Self-Healing**: If a file is missing or a path is broken, the system detects it and repairs it.
+*   **Auto-Update**: It stays in sync with the cloud. Always the latest version. Always the best features.
+*   **Database Automation**: Need a fresh start? One click wipes and re-initializes your MySQL server with a clean schema and test data.
 
-- **Monitoring Capabilities**
-  - [x] **Watcher**: Monitors a specific folder (recursive) for file changes.
-  - [x] **Threshold Trigger**: Automatically actions when added/removed lines exceed a limit (Default: 500 lines).
-  - [x] **Bot Identity**: Commits using a distinct identity (`DMJ.one Code-Ninja`) to separate manual vs. auto-saves.
-  - [x] **Global Access**: Manage from anywhere using the `apm` command.
-
-- **Controls**
-  - [x] `apm -Start`: Start monitoring the current directory.
-  - [x] `apm -Stop`: Stop the background process.
-  - [x] `apm -Status`: View current changes and monitor status.
-  - [x] `apm -Configure`: Interactive setup for threshold, bot name, and target folder.
-
----
-
-## 🛡️ Self-Maintenance & System Health
-Features designed to keep the environment healthy and up-to-date.
-
-- **Update System**
-  - [x] **Self-Update**: Checks the central GitHub repository for newer versions of the bootstrap scripts.
-  - [x] **Automatic Backup**: Backs up current scripts to `.update-backup` before applying changes.
-  - [x] **Version Tracking**: Compares local `VERSION` file with remote.
-
-- **Database Tools**
-  - [x] **Auto-Setup**: `start.bat` Option 4 drops and recreates a clean `testdb` with `users`, `products`, and `orders` tables.
-  - [x] **Credential Management**: Generates/Loads generic test credentials (`testuser` / `testpass123`) for development ease.
-  - [x] **Recovery**: Can initialize a raw MySQL Data directory if the service is broken or missing.
-
-- **Quality Assurance**
-  - [x] **Verify System**: `start.bat` Option 5 runs a diagnostic on all installed tools (`java --version`, `gcc --version`, etc.).
-  - [x] **Run Tests**: `start.bat` Option 6 compiles and executes a "Hello World + Database" sample in every supported language to prove the system works.
-
----
-
-## 📋 Technical Specifications
-- **OS Support**: Windows 10 / Windows 11
-- **Architecture**: x64
-- **License**: MIT License
-- **Attribution**: Built for the [dmj.one](https://dmj.one) initiative.
+**Simple. Powerful. Essential.**

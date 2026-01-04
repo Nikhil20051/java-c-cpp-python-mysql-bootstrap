@@ -1,9 +1,9 @@
 -- Database Setup Script
--- Generated: 01/05/2026 01:23:19
+-- Generated: 01/05/2026 02:36:09
 -- User: appuser
 
 -- Create test database
-CREATE DATABASE IF NOT EXISTS testdb CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE IF NOT EXISTS testdb;
 USE testdb;
 
 -- Drop tables if they exist to ensure clean state
@@ -61,7 +61,7 @@ INSERT INTO orders (user_id, product_id, quantity, total_price, status) VALUES
 
 -- Create/Update application user
 DROP USER IF EXISTS 'appuser'@'localhost';
-CREATE USER 'appuser'@'localhost' IDENTIFIED BY 'Rg4%e1aCQZ^laRzR';
+CREATE USER 'appuser'@'localhost' IDENTIFIED BY '72Je!^NY06OPx$uW';
 GRANT ALL PRIVILEGES ON testdb.* TO 'appuser'@'localhost';
 FLUSH PRIVILEGES;
 

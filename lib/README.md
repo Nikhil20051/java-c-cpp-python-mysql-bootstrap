@@ -1,23 +1,14 @@
-# MySQL Connector/J Library
+# Libraries.
 
-This folder should contain the MySQL Connector/J JAR file.
+**The engine room.**
 
-## Automatic Download
+This directory houses the connectivity drivers for Java.
 
-The installation script will attempt to download MySQL Connector/J automatically.
+## Automated Handling
+The installation script manages this automatically. You generally do not need to touch this.
 
-## Manual Download
+## Manual Intervention
+If you are offline or the automation is blocked:
 
-If automatic download fails:
-
-1. Visit: https://dev.mysql.com/downloads/connector/j/
-2. Download: mysql-connector-j-8.3.0.zip
-3. Extract the JAR file to this folder
-
-Expected structure:
-```
-lib/
-└── mysql-connector-j-8.3.0/
-    ├── mysql-connector-j-8.3.0.jar
-    └── ...
-```
+1.  **Download**: [MySQL Connector/J](https://dev.mysql.com/downloads/connector/j/)
+2.  **Extract**: Place logic inside this folder.

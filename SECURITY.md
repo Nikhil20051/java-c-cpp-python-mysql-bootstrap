@@ -1,18 +1,21 @@
-# Security Policy
+# Security.
+
+**Your trust is paramount.**
+
+We take the security of your development environment seriously.
 
 ## Supported Versions
 
-| Version | Supported          |
-| ------- | ------------------ |
-| 1.0.x   | :white_check_mark: |
-| < 1.0   | :x:                |
+We support the latest version. Always.
+*   **Version 1.0.x**: Supported.
+*   **Older Versions**: Not supported.
 
-## Reporting a Vulnerability
+## Reporting Vulnerabilities
 
-We take security seriously. If you discover a security vulnerability, please report it privately.
+If you find a security issue, do not publish it.
 
-**DO NOT** open a public issue.
+**Email us directly**: `security@dmj.one`
 
-Instead, please email **security@dmj.one** (or contact Nikhil Bhardwaj directly).
+We will read it. To respect your responsible disclosure, we will respond within 48 hours.
 
-We will try to respond within 48 hours.
+**Thank you for keeping the ecosystem safe.**

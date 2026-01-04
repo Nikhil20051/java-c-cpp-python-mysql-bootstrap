@@ -1,78 +1,51 @@
-# Contributing to Development Environment Bootstrap
+# Join Us.
 
-Thank you for your interest in contributing to this project! This project is part of the [dmj.one](https://dmj.one) initiative, dedicated to providing free and accessible educational resources.
+**Help us build the perfect environment.**
 
-## 📜 Code of Conduct
+We are building the definitive development experience for Windows. It is ambitious. It is difficult. And we want your help.
 
-By participating in this project, you agree to abide by our [Code of Conduct](CODE_OF_CONDUCT.md).
+This project is part of the **dmj.one** initiative. We believe in free, accessible, and beautiful education for everyone.
 
-## 🤝 How to Contribute
+## Philosophy
 
-### Reporting Bugs
+Before you write code, understand our values:
+1.  **It Must Just Work**: Zero configuration. Zero friction.
+2.  **Beauty Matters**: Aesthetics are not an afterthought. They are the product.
+3.  **Simplicity**: If you can remove a step, remove it.
 
-1. Check the [Issues](https://github.com/Nikhil20051/java-c-cpp-python-mysql-bootstrap/issues) page to see if the bug has already been reported.
-2. If not, create a new issue with:
-   - A clear, descriptive title
-   - Steps to reproduce the bug
-   - Expected behavior
-   - Actual behavior
-   - Your Windows version and system specs
-   - Screenshots if applicable
+## How To Contribute
 
-### Suggesting Features
-
-1. Check existing issues and discussions for similar suggestions.
-2. Open a new issue with the "enhancement" label.
-3. Describe:
-   - The problem you're trying to solve
-   - Your proposed solution
-   - Any alternatives you've considered
+### Reporting Issues
+If you find a bug, tell us.
+But don't just say "it broke." Tell us the story.
+*   What were you trying to do?
+*   What happened instead?
+*   What version of Windows are you on?
 
 ### Pull Requests
+We welcome code. But we have high standards.
+1.  **Fork** the repository.
+2.  **Branch** off.
+3.  **Write** clean, documented code.
+4.  **Test** it. If it breaks the "One Click" promise, we cannot merge it.
+5.  **Submit** a Pull Request.
 
-1. **Fork** the repository
-2. **Create a branch** for your feature (`git checkout -b feature/amazing-feature`)
-3. **Make your changes** following our coding standards
-4. **Test** your changes thoroughly
-5. **Commit** with clear, descriptive messages (`git commit -m 'Add amazing feature'`)
-6. **Push** to your branch (`git push origin feature/amazing-feature`)
-7. **Open a Pull Request** with a clear description of changes
+## Standards
 
-## 📝 Coding Standards
+**PowerShell Scripts**
+*   Write for humans, not just machines.
+*   Use `try/catch`. Handle errors gracefully.
+*   Document your functions.
 
-### PowerShell Scripts
-- Use meaningful variable names
-- Include comment headers with `.SYNOPSIS` and `.DESCRIPTION`
-- Handle errors gracefully with try/catch blocks
-- Use `-ErrorAction` parameters appropriately
-- Follow verb-noun naming for functions
+**Documentation**
+*   Be concise.
+*   Be clear.
+*   Inspire confidence.
 
-### Sample Code
-- Keep samples simple and educational
-- Include comments explaining what the code does
-- Ensure samples work with the provided setup
+## License
 
-### Documentation
-- Use clear, simple language
-- Include examples where helpful
-- Keep the README updated with any new features
-
-## 🧪 Testing
-
-Before submitting a PR:
-
-1. Run `.\verify-installation.ps1` to ensure core functionality
-2. Test your changes on a clean Windows 11 installation if possible
-3. Test with both PowerShell 5.1 and PowerShell 7+ if applicable
-
-## 📄 License
-
-By contributing, you agree that your contributions will be licensed under the [MIT License](LICENSE).
-
-## 🙏 Attribution
-
-This project is maintained by [Nikhil Bhardwaj](https://github.com/Nikhil20051) as part of the [dmj.one](https://dmj.one) initiative.
+By contributing, you agree that your work will be licensed under the **MIT License**.
 
 ---
-
-**Thank you for helping make education accessible to everyone! 🎓**
+*Maintained by Nikhil Bhardwaj.*
+*Thank you for making education accessible.*
