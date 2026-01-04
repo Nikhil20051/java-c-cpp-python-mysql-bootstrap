@@ -72,8 +72,8 @@ $DefaultConfig = @{
     CheckIntervalSeconds = 30
     Enabled              = $true
     ExcludePatterns      = @("*.log", "*.pid", "node_modules/*", ".git/*", "*.tmp")
-    BotName              = "DMJ.one Automated Backup System"
-    BotEmail             = "contact@dmj.one"
+    BotName              = "Code Preservation Bot"
+    BotEmail             = "preservation-bot@dmj.one"
 }
 
 # ============================================================================
@@ -197,7 +197,7 @@ function Invoke-AutoPush {
             $fileList = $fileList.Substring(0, 97) + "..."
         }
         
-        $commitMessage = "[AUTO-BACKUP] Automated snapshot of large changeset ($TotalChanges lines)`n`nFiles Changed: $($ChangedFiles.Count) files including $fileList`nTimestamp: $timestamp`n`n> This commit was generated automatically by the $BotName to preserve work-in-progress."
+        $commitMessage = "🛡️ [AUTO-PRESERVE] High-volume change detected ($TotalChanges lines)`n`nSystem automatically pushed these changes to ensure safety during major refactoring.`n`nFiles Affected: $($ChangedFiles.Count) files including $fileList`nTimestamp: $timestamp"
 
         $commitResult = git -c "user.name=$BotName" -c "user.email=$BotEmail" commit -m $commitMessage 2>&1
         
@@ -230,6 +230,52 @@ function Invoke-AutoPush {
     }
 }
 
+function Find-GitRoot {
+    param([string]$StartPath)
+    $current = $StartPath
+    while ($current -and (Test-Path $current)) {
+        if (Test-Path (Join-Path $current ".git")) {
+            return $current
+        }
+        $parent = Split-Path -Parent $current
+        if ($parent -eq $current) { break } # Root of drive
+        $current = $parent
+    }
+    return $null
+}
+
+function Verify-GitSetup {
+    param([string]$TargetFolder)
+    
+    if (-not (Test-Path (Join-Path $TargetFolder ".git"))) {
+        Write-Host ""
+        Write-Host "Warning: Git is not initialized in '$TargetFolder'" -ForegroundColor Yellow
+        $choice = Read-Host "Do you want to initialize Git here? (Y/N)"
+        
+        if ($choice -match "^[Yy]") {
+            Push-Location $TargetFolder
+            try {
+                git init
+                Write-Host "Git initialized." -ForegroundColor Green
+                
+                $remoteUrl = Read-Host "Enter remote repository URL (or press Enter to skip)"
+                if ($remoteUrl -and $remoteUrl.Trim().Length -gt 0) {
+                    git remote add origin $remoteUrl
+                    Write-Host "Remote 'origin' added." -ForegroundColor Green
+                }
+            }
+            finally {
+                Pop-Location
+            }
+        }
+        else {
+            Write-Host "Cannot monitor a non-git folder. Aborting." -ForegroundColor Red
+            return $false
+        }
+    }
+    return $true
+}
+
 function Start-Monitoring {
     param(
         [string]$Folder,
@@ -238,34 +284,80 @@ function Start-Monitoring {
     )
     
     $config = Get-Config
+    $ScriptLocation = $PSScriptRoot
+
+    # 1. AUTO-DETECT LOGIC
+    # If no folder passed, and config invalid (or we just suspect it might be stale), try to detect.
+    # We prefer detection relative to THIS script to ensure portability.
+    $detectedRoot = Find-GitRoot -StartPath $ScriptLocation
     
-    if ($Folder) { $config.TargetFolder = $Folder }
-    if ($Threshold -gt 0) { $config.LineThreshold = $Threshold }
-    if ($Interval -gt 0) { $config.CheckIntervalSeconds = $Interval }
-    
-    if (-not (Test-Path $config.TargetFolder)) {
-        Write-Log "Target folder does not exist: $($config.TargetFolder)" "ERROR"
-        return
+    # If detection failed, default to parent of script (common case: script inside repo)
+    if (-not $detectedRoot) { 
+        $detectedRoot = (Split-Path -Parent $ScriptLocation) 
     }
+
+    # Determine candidate folder
+    $candidateFolder = if ($Folder) { $Folder } else { $detectedRoot }
     
-    if (-not (Test-Path (Join-Path $config.TargetFolder ".git"))) {
-        Write-Log "Target folder is not a git repository: $($config.TargetFolder)" "ERROR"
-        return
+    # Get Remote URL for verification
+    $remoteUrl = "No remote configured"
+    if (Test-Path (Join-Path $candidateFolder ".git")) {
+        $remoteUrl = git -C $candidateFolder remote get-url origin 2>$null
+        if (-not $remoteUrl) { $remoteUrl = "No 'origin' remote found" }
     }
+
+    Write-Host ""
+    Write-Host "================================================================" -ForegroundColor Cyan
+    Write-Host "           AUTO-PUSH MONITOR - Setup                            " -ForegroundColor Cyan
+    Write-Host "================================================================" -ForegroundColor Cyan
+    Write-Host "Auto-Detected Project Root:" -ForegroundColor Gray
+    Write-Host "  Folder: $candidateFolder" -ForegroundColor Yellow
+    Write-Host "  Remote: $remoteUrl" -ForegroundColor Yellow
+    Write-Host ""
     
-    if (Test-Path $PidFile) {
-        $existingPid = Get-Content $PidFile -ErrorAction SilentlyContinue
-        if ($existingPid -and (Get-Process -Id $existingPid -ErrorAction SilentlyContinue)) {
-            Write-Log "Monitor is already running (PID: $existingPid). Use -Stop first." "WARNING"
+    # 2. USER CONFIRMATION
+    $confirm = Read-Host "Is this the correct folder to monitor? (Y/n)"
+    if ($confirm -match "^[Nn]") {
+        $candidateFolder = Read-Host "Please enter the full path to the project root"
+        if (-not (Test-Path $candidateFolder)) {
+            Write-Host "Error: Path does not exist." -ForegroundColor Red
             return
         }
     }
     
+    # Update config with confirmed folder
+    $config.TargetFolder = $candidateFolder
+    
+    # 3. GIT VERIFICATION & SETUP WIZARD
+    if (-not (Verify-GitSetup -TargetFolder $config.TargetFolder)) {
+        return
+    }
+
+    # Apply other overrides
+    if ($Threshold -gt 0) { $config.LineThreshold = $Threshold }
+    if ($Interval -gt 0) { $config.CheckIntervalSeconds = $Interval }
+    
+    # Save validated config
     Save-Config $config
+
+    # Check for existing instance and force restart
+    if (Test-Path $PidFile) {
+        $existingPid = Get-Content $PidFile -ErrorAction SilentlyContinue
+        if ($existingPid) {
+            $existingProcess = Get-Process -Id $existingPid -ErrorAction SilentlyContinue
+            if ($existingProcess) {
+                Write-Host "Stopping existing monitor instance (PID: $existingPid)..." -ForegroundColor Yellow
+                Stop-Process -Id $existingPid -Force -ErrorAction SilentlyContinue
+                Start-Sleep -Seconds 1
+            }
+        }
+        # Always remove stale or just-killed PID file
+        Remove-Item $PidFile -Force -ErrorAction SilentlyContinue
+    }
     
     Write-Host ""
     Write-Host "================================================================" -ForegroundColor Cyan
-    Write-Host "           AUTO-PUSH MONITOR - Starting...                      " -ForegroundColor Cyan
+    Write-Host "           CODE PRESERVATION SYSTEM - Starting...               " -ForegroundColor Cyan
     Write-Host "================================================================" -ForegroundColor Cyan
     Write-Host "  Target Folder : $($config.TargetFolder)" -ForegroundColor White
     Write-Host "  Line Threshold: $($config.LineThreshold)" -ForegroundColor White
