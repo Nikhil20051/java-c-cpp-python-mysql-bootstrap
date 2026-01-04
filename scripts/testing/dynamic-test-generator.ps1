@@ -452,7 +452,7 @@ runner.run_test("$testName", "$category", $testName)
                 $size = Get-Random -Minimum 100 -Maximum 5000
                 @"
 def $testName():
-    d = {{f"k{{i}}": random.randint(0, 10**6) for i in range($size)}}
+    d = dict((f"k{i}", random.randint(0, 10**6)) for i in range($size))
     _ = list(d.keys())
     _ = list(d.values())
     _ = sum(d.values())
