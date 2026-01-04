@@ -16,14 +16,16 @@ import mysql.connector
 from mysql.connector import Error
 from datetime import datetime
 import sys
+import os
 
 # Database configuration
+# Attempt to fetch from environment variables first (populated by d1run/.env)
 DB_CONFIG = {
-    'host': 'localhost',
-    'port': 3306,
-    'database': 'testdb',
-    'user': 'appuser',
-    'password': 'Rg4%e1aCQZ^laRzR',
+    'host': os.getenv('DB_HOST', 'localhost'),
+    'port': int(os.getenv('DB_PORT', 3306)),
+    'database': os.getenv('DB_NAME', 'testdb'),
+    'user': os.getenv('DB_USER', 'appuser'),
+    'password': os.getenv('DB_PASSWORD', '72Je!^NY06OPx$uW'),
     'autocommit': True
 }
 

@@ -638,6 +638,44 @@ if ($Arguments.Count -gt 0) {
 Write-Dbg "Extension: $FileExt"
 
 # ============================================
+# LOAD ENVIRONMENT VARIABLES (.env)
+# ============================================
+# Try to find .env file to ensure fresh credentials
+$EnvPath = $null
+$CurrentDir = $FileDir
+for ($i = 0; $i -lt 5; $i++) {
+    # Search up 5 levels max
+    $TestPath = Join-Path $CurrentDir ".env"
+    if (Test-Path $TestPath) {
+        $EnvPath = $TestPath
+        break
+    }
+    $Parent = Split-Path -Parent $CurrentDir
+    if (-not $Parent -or $Parent -eq $CurrentDir) { break }
+    $CurrentDir = $Parent
+}
+
+if ($EnvPath) {
+    Write-Dbg "Loading environment from: $EnvPath"
+    $EnvContent = Get-Content $EnvPath -Raw
+    $EnvLines = $EnvContent -split "`r`n|`n"
+    foreach ($line in $EnvLines) {
+        $line = $line.Trim()
+        if ($line -match "^#" -or $line -eq "") { continue }
+        if ($line -match "^([^=]+)=(.*)$") {
+            $name = $matches[1].Trim()
+            $value = $matches[2].Trim()
+            # Remove quotes if present
+            if ($value -match "^['`"](.*)['`"]$") { $value = $matches[1] }
+            
+            # Set variable in current process scope
+            [Environment]::SetEnvironmentVariable($name, $value, "Process")
+            Write-Dbg "Set Env: $name"
+        }
+    }
+}
+
+# ============================================
 # LANGUAGE EXECUTION
 # ============================================
 $startTime = Get-Date

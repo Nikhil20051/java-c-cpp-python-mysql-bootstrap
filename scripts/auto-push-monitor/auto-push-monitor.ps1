@@ -265,6 +265,7 @@ function Find-GitRoot {
 function Verify-GitSetup {
     param([string]$TargetFolder)
     
+    # Check if .git directory exists
     if (-not (Test-Path (Join-Path $TargetFolder ".git"))) {
         Write-Host ""
         Write-Host "Warning: Git is not initialized in '$TargetFolder'" -ForegroundColor Yellow

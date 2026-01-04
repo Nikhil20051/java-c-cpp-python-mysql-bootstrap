@@ -313,8 +313,10 @@ function Update-StartBat {
     $startBat = Join-Path $ProjectRoot "start.bat"
     if (Test-Path $startBat) {
         $content = Get-Content $startBat -Raw
+        # Update App User display
         $content = $content -replace 'App User:\s+\S+\s+\(Password:\s+\S+\)', "App User:  $($Credentials.username) (Password: $($Credentials.password))"
-        $content = $content -replace "testuser '[^']*' with password '[^']*'", "user '$($Credentials.username)' with password '$($Credentials.password)'"
+        # Update INFO display
+        $content = $content -replace "user '[^']*' with password '[^']*'", "user '$($Credentials.username)' with password '$($Credentials.password)'"
         $content | Set-Content $startBat -NoNewline
         Write-Success "Updated: start.bat"
     }
@@ -329,12 +331,20 @@ function Update-InstallerScript {
     $installerFile = Join-Path $ProjectRoot "scripts\install-dev-environment.ps1"
     if (Test-Path $installerFile) {
         $content = Get-Content $installerFile -Raw
-        # Update the hardcoded credentials display
-        $content = $content -replace "App User:\s+testuser", "App User:  $($Credentials.username)"
-        $content = $content -replace 'Password:\s+testpass123', "Password:  $($Credentials.password)"
-        $content = $content -replace "'testuser'@'localhost' IDENTIFIED BY 'testpass123'", "'$($Credentials.username)'@'localhost' IDENTIFIED BY '$($Credentials.password)'"
-        $content | Set-Content $installerFile -NoNewline
-        Write-Success "Updated: scripts\install-dev-environment.ps1"
+        
+        # Update the default hardcoded credentials (fallback)
+        # Matches: $Global:Creds = @{ username = "..."; password = "..."; database = "..." }
+        $pattern = '\$Global:Creds = @\{ username = "[^"]*"; password = "[^"]*"; database = "[^"]*" \}'
+        $replacement = "`$Global:Creds = @{ username = `"$($Credentials.username)`"; password = `"$($Credentials.password)`"; database = `"$($Credentials.database)`" }"
+        
+        if ($content -match $pattern) {
+            $content = $content -replace $pattern, $replacement
+            $content | Set-Content $installerFile -NoNewline
+            Write-Success "Updated: scripts\install-dev-environment.ps1 (Defaults)"
+        }
+        else {
+            Write-Info "Pattern not found in install-dev-environment.ps1 (already updated or structure changed)"
+        }
     }
 }
 

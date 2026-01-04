@@ -23,9 +23,19 @@ import java.util.Scanner;
  */
 public class MySQLTest {
     // Database configuration
-    private static final String DB_URL = "jdbc:mysql://localhost:3306/testdb";
-    private static final String DB_USER = "appuser";
-    private static final String DB_PASSWORD = "Rg4%e1aCQZ^laRzR";
+    // Database configuration - Fetches from Environment Variables first
+    private static final String DB_HOST = getEnv("DB_HOST", "localhost");
+    private static final String DB_PORT = getEnv("DB_PORT", "3306");
+    private static final String DB_NAME = getEnv("DB_NAME", "testdb");
+
+    private static final String DB_URL = "jdbc:mysql://" + DB_HOST + ":" + DB_PORT + "/" + DB_NAME;
+    private static final String DB_USER = getEnv("DB_USER", "appuser");
+    private static final String DB_PASSWORD = getEnv("DB_PASSWORD", "72Je!^NY06OPx$uW");
+
+    private static String getEnv(String key, String defaultValue) {
+        String value = System.getenv(key);
+        return (value != null && !value.isEmpty()) ? value : defaultValue;
+    }
 
     private Connection connection;
 

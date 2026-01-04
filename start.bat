@@ -100,7 +100,7 @@ echo ========================================================
 echo.
 echo   [INFO] Default Credentials:
 echo   - Root User: root (No Password)
-echo   - App User:  appuser (Password: Rg4%e1aCQZ^laRzR)
+echo   - App User:  appuser (Password: 72Je!^NY06OPx$uW)
 echo   - Database:  testdb
 echo.
 echo   [INFO] Checking MySQL availability...
@@ -200,7 +200,7 @@ call mysql -u root --execute="source database\setup-database.sql" 2>nul
 if %errorlevel% EQU 0 (
     echo.
     echo   [SUCCESS] Database setup completed successfully!
-    echo   [INFO] user 'appuser' with password 'Rg4%e1aCQZ^laRzR' is ready.
+    echo   [INFO] user 'appuser' with password '72Je!^NY06OPx$uW' is ready.
     echo.
     pause
     goto MENU

@@ -111,11 +111,11 @@ if (Test-Path $credsFile) {
     }
     catch {
         Write-Info "Could not load credentials. Using defaults."
-        $Global:Creds = @{ username = "testuser"; password = "testpass123"; database = "testdb" }
+        $Global:Creds = @{ username = "appuser"; password = "72Je!^NY06OPx$uW"; database = "testdb" }
     }
 }
 else {
-    $Global:Creds = @{ username = "testuser"; password = "testpass123"; database = "testdb" }
+    $Global:Creds = @{ username = "appuser"; password = "72Je!^NY06OPx$uW"; database = "testdb" }
 }
 
 # ============================================
