@@ -23,24 +23,66 @@ To set up the test database (needed for samples):
 1.  Double-click `SETUP_DB.bat`.
 2.  If asked, enter the password you set (or just press Enter if you didn't set one).
 
-### What Gets Installed
+---
 
-| Component | Version | Purpose |
-|-----------|---------|---------|
-| Chocolatey | Latest | Package manager |
-| OpenJDK | 21 | Java development |
-| MinGW-w64 | Latest | C/C++ compiler (GCC/G++) |
-| Python | 3.12 | Python development |
-| MySQL Server | Latest | Database server |
-| MySQL Workbench | Latest | Database GUI |
-| Git | Latest | Version control |
-| VS Code | Latest | Code editor |
+## ⚡ Universal Code Runner (`runall`)
+
+Run **any** code file with a single command! No need to remember compile commands.
+
+### Usage
+```powershell
+.\runall.bat <filename> [arguments...]
+```
+
+### Examples
+```powershell
+# Python
+.\runall.bat hello.py
+
+# Java (auto-detects class name!)
+.\runall.bat MyProgram.java
+
+# C / C++
+.\runall.bat program.c
+.\runall.bat app.cpp
+
+# SQL (runs in MySQL)
+.\runall.bat query.sql
+
+# With arguments
+.\runall.bat calculator.py 5 10
+```
+
+### What It Does Automatically
+| Language | Extension | Auto Actions |
+|----------|-----------|--------------|
+| Python | `.py` | Runs with Python interpreter |
+| Java | `.java` | Detects class name, compiles, runs, cleans up `.class` files |
+| C | `.c` | Compiles with GCC, runs, cleans up `.exe` |
+| C++ | `.cpp` | Compiles with G++, runs, cleans up `.exe` |
+| JavaScript | `.js` | Runs with Node.js |
+| SQL | `.sql` | Executes in MySQL |
+| PowerShell | `.ps1` | Runs script |
+| Batch | `.bat` | Runs script |
+
+**Smart Features:**
+- ✅ Auto-detects `public class` name in Java files
+- ✅ Auto-adds MySQL connector to classpath if JDBC is used
+- ✅ Auto-links MySQL libraries for C/C++ if `mysql.h` is detected
+- ✅ Cleans up compiled files after execution (use `-KeepExe` to keep them)
+- ✅ Shows execution time and clear error messages
+
+---
 
 ## 📁 Project Structure
 
 ```
 java-c-cpp-python-mysql-bootstrap/
 ├── INSTALL.bat                    # One-click installer (run as admin)
+├── VERIFY.bat                     # Quick verification (double-click)
+├── SETUP_DB.bat                   # Database setup helper
+├── runall.bat                     # Universal code runner
+├── runall.ps1                     # Universal code runner (PowerShell)
 ├── install-dev-environment.ps1   # Main PowerShell installation script
 ├── verify-installation.ps1       # Verify all tools are installed
 ├── run-tests.ps1                 # Run test programs
