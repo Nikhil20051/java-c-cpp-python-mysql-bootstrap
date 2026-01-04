@@ -88,17 +88,21 @@ if ($Uninstall) {
 Write-Host "Installing d1run..." -ForegroundColor Cyan
 
 $ScriptDir = $PSScriptRoot
-$d1runPs1 = Join-Path $ScriptDir "d1run.ps1"
+$d1runImpl = Join-Path $ScriptDir "d1run-impl.ps1"
 $d1runCmd = Join-Path $ScriptDir "d1run.cmd"
 
-if (-not (Test-Path $d1runPs1)) { throw "Missing d1run.ps1" }
+if (-not (Test-Path $d1runImpl)) { throw "Missing d1run-impl.ps1" }
 if (-not (Test-Path $d1runCmd)) { throw "Missing d1run.cmd" }
 
 if (-not (Test-Path $InstallPath)) {
     New-Item -ItemType Directory -Path $InstallPath -Force | Out-Null
 }
 
-Copy-Item $d1runPs1 $InstallPath -Force
+if (Test-Path (Join-Path $InstallPath "d1run.ps1")) {
+    Remove-Item (Join-Path $InstallPath "d1run.ps1") -Force
+}
+
+Copy-Item $d1runImpl $InstallPath -Force
 Copy-Item $d1runCmd $InstallPath -Force
 
 Write-Success "Files copied."

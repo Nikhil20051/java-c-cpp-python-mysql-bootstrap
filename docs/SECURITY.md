@@ -19,3 +19,6 @@ If you find a security issue, do not publish it.
 We will read it. To respect your responsible disclosure, we will respond within 48 hours.
 
 **Thank you for keeping the ecosystem safe.**
+
+*Dream. Manifest. Journey.*
+*Copyright © 2026 [dmj.one](https://dmj.one).*

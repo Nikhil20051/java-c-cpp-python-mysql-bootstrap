@@ -11,5 +11,5 @@ REM Usage: runall <filename> [args...]
 REM ============================================
 
 REM Redirect to the new d1run script
-powershell -ExecutionPolicy Bypass -File "%~dp0scripts\d1run.ps1" %*
+powershell -ExecutionPolicy Bypass -File "%~dp0scripts\d1run-impl.ps1" %*
 exit /b %ERRORLEVEL%

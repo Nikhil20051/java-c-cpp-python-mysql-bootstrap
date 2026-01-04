@@ -33,7 +33,7 @@ if (-not $isAdmin) {
 
 .NOTES
     File Name      : install-dev-environment.ps1
-    Author         : Development Bootstrap System
+    Author         : Nikhil Bhardwaj
     Prerequisite   : Windows 11, Administrator privileges
     
 .EXAMPLE

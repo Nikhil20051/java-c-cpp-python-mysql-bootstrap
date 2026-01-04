@@ -10,7 +10,7 @@
     easily distinguishable from manual pushes while preserving your global git config.
     
 .NOTES
-    Author: Auto-Push Monitor Module
+    Author: Nikhil Bhardwaj
     Version: 1.0.0
     
     PORTABLE MODULE: Copy this entire auto-push-monitor folder to any project.

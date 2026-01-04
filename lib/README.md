@@ -12,3 +12,6 @@ If you are offline or the automation is blocked:
 
 1.  **Download**: [MySQL Connector/J](https://dev.mysql.com/downloads/connector/j/)
 2.  **Extract**: Place logic inside this folder.
+
+*Dream. Manifest. Journey.*
+*Copyright © 2026 [dmj.one](https://dmj.one).*

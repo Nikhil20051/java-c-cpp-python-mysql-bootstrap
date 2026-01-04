@@ -4,6 +4,9 @@ authors:
 - family-names: "Bhardwaj"
   given-names: "Nikhil"
   orcid: "https://orcid.org/0000-0000-0000-0000"
+- family-names: "Mohan"
+  given-names: "Divya"
+  alias: "divyamohan1993"
 title: "Development Environment Bootstrap"
 version: 1.0.0
 date-released: 2026-01-04

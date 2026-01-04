@@ -44,14 +44,24 @@ No flags. No configuration. Pure focus.
 
 ## How To Start
 
-You do not need to know Git. You do not need to be an expert.
+**The 3-Step "Unboxing".**
 
 1.  **Download**: Click the green "Code" button above and select **Download ZIP**.
-2.  **Extract**: Unzip the folder anywhere on your computer (e.g., `D:\Dev`).
-3.  **Launch**: Open the folder and double-click **`start.bat`**.
+2.  **Extract**: Unzip the folder anywhere (e.g., `D:\Dev`).
+3.  **Launch**: Double-click **`start.bat`**.
 
-Select **Option 1 (Full Install)**.
-The software will handle the rest.
+*Need a detailed walkthrough? Read [**Getting Started**](GETTING_STARTED.md).*
+
+## Documentation
+
+Dive deeper into the ecosystem. Use the guides below to master your tools.
+
+*   [**Getting Started**](GETTING_STARTED.md): The full unboxing and installation guide.
+*   [**The Manual**](THE_MANUAL.md): How to write, compile, and run code with `d1run`.
+*   [**Architecture**](ARCHITECTURE.md): A look under the hood at the engineering.
+*   [**Troubleshooting**](TROUBLESHOOTING.md): Solutions for common issues.
+*   [**FAQ**](FAQ.md): Why we made the choices we made.
+*   [**Features**](FEATURES.md): A complete capability list.
 
 ## Your Safety Net
 
@@ -61,5 +71,17 @@ It quietly watches your workspace. If you write significant amounts of code, it 
 **Welcome to the future of development.**
 
 ---
-*Built for the (dmj.one)[https://dmj.one] initiative by Nikhil Bhardwaj.*
-*Copyright © 2026 dmj.one*
+
+## The Initiative
+
+**Dream. Manifest. Journey.**
+
+This software is a manifestation of the [**dmj.one initiative**](https://dmj.one), a public welfare mission founded in 2007. It is maintained by *Nikhil Bhardwaj* and *Divya Mohan*.
+
+We operate on a simple yet radical belief: **Education is a fundamental human right.**
+
+*   **Dream**: We envision a world where every aspiring engineer has a fair starting line.
+*   **Manifest**: We build the tools that turn that vision into reality.
+*   **Journey**: We support your evolution from beginner to professional, ensuring the technology never stands in your way.
+
+*Copyright © 2026 [dmj.one](https://dmj.one). All rights reserved.*

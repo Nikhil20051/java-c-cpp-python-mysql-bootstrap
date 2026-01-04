@@ -3,15 +3,15 @@
 # Code owners are automatically requested for review when someone opens a pull request.
 
 # Default owner for everything in the repo
-* @dmjone @Nikhil20051
+* @dmjone @divyamohan1993 @Nikhil20051
 
 # Documentation
-*.md @dmjone @Nikhil20051
-/docs/ @dmjone @Nikhil20051
+*.md @dmjone @divyamohan1993 @Nikhil20051
+/docs/ @divyamohan1993 @Nikhil20051
 
 # Installation scripts
-*.ps1 @Nikhil20051
-*.bat @Nikhil20051
+*.ps1 @divyamohan1993 @Nikhil20051
+*.bat @divyamohan1993 @Nikhil20051
 
 # Sample code
-/samples/ @Nikhil20051
+/samples/ @divyamohan1993 @Nikhil20051

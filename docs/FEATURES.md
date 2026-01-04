@@ -38,3 +38,5 @@ We realized that switching between `javac`, `g++`, and `python` breaks your flow
 *   **Database Automation**: Need a fresh start? One click wipes and re-initializes your MySQL server with a clean schema and test data.
 
 **Simple. Powerful. Essential.**
+
+*Dream. Manifest. Journey.*

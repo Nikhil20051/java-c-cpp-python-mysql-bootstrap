@@ -43,3 +43,6 @@ It is simple. It is readable.
 *   `CheckIntervalSeconds`: How often does it check? (Default: 30)
 
 **Code without fear.**
+
+*Dream. Manifest. Journey.*
+*Copyright © 2026 [dmj.one](https://dmj.one).*
