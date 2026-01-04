@@ -1,4 +1,10 @@
-﻿-- Create test database
+﻿-- Copyright (c) 2026 dmj.one
+--
+-- This software is part of the dmj.one initiative.
+-- Created by Nikhil Bhardwaj.
+--
+-- Licensed under the MIT License.
+-- Create test database
 CREATE DATABASE IF NOT EXISTS testdb;
 USE testdb;
 
@@ -22,3 +28,4 @@ GRANT ALL PRIVILEGES ON testdb.* TO 'testuser'@'localhost';
 FLUSH PRIVILEGES;
 
 SELECT 'Database setup completed successfully!' AS status;
+

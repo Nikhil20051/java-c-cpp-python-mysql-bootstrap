@@ -1,3 +1,11 @@
+﻿/*
+ * Copyright (c) 2026 dmj.one
+ *
+ * This software is part of the dmj.one initiative.
+ * Created by Nikhil Bhardwaj.
+ *
+ * Licensed under the MIT License.
+ */
 /**
  * C Basic Test Program
  * Tests C installation without MySQL dependency
@@ -111,3 +119,4 @@ int main(void) {
     
     return 0;
 }
+

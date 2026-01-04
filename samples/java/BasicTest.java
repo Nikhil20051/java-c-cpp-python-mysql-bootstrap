@@ -1,3 +1,11 @@
+﻿/*
+ * Copyright (c) 2026 dmj.one
+ *
+ * This software is part of the dmj.one initiative.
+ * Created by Nikhil Bhardwaj.
+ *
+ * Licensed under the MIT License.
+ */
 /**
  * Java Basic Test Program
  * Tests Java installation without MySQL dependency
@@ -10,9 +18,9 @@ import java.io.*;
 public class BasicTest {
     
     public static void main(String[] args) {
-        System.out.println("╔══════════════════════════════════════════════════════════╗");
-        System.out.println("║           Java Basic Test Program                         ║");
-        System.out.println("╚══════════════════════════════════════════════════════════╝");
+        System.out.println("â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—");
+        System.out.println("â•‘           Java Basic Test Program                         â•‘");
+        System.out.println("â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•");
         System.out.println();
         
         testBasicOperations();
@@ -23,9 +31,9 @@ public class BasicTest {
         testDateTime();
         
         System.out.println();
-        System.out.println("╔══════════════════════════════════════════════════════════╗");
-        System.out.println("║           All Java Basic Tests Passed!                    ║");
-        System.out.println("╚══════════════════════════════════════════════════════════╝");
+        System.out.println("â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—");
+        System.out.println("â•‘           All Java Basic Tests Passed!                    â•‘");
+        System.out.println("â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•");
     }
     
     static void testBasicOperations() {
@@ -218,3 +226,4 @@ class Cat extends Animal {
         System.out.println(name + " says: Meow!");
     }
 }
+

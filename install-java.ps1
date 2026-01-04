@@ -1,3 +1,11 @@
+﻿<#
+    Copyright (c) 2026 dmj.one
+    
+    This software is part of the dmj.one initiative.
+    Created by Nikhil Bhardwaj.
+    
+    Licensed under the MIT License.
+#>
 # Install Java - Quick script (self-elevating)
 $currentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
 if (-not $currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
@@ -35,3 +43,4 @@ if ($LASTEXITCODE -eq 0) {
 
 Write-Host "`nPress any key to exit..." -ForegroundColor Gray
 $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+

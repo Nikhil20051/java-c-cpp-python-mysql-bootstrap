@@ -1,0 +1,17 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Bhardwaj"
+  given-names: "Nikhil"
+  orcid: "https://orcid.org/0000-0000-0000-0000"
+title: "Development Environment Bootstrap"
+version: 1.0.0
+date-released: 2026-01-04
+url: "https://github.com/Nikhil20051/java-c-cpp-python-mysql-bootstrap"
+repository-code: "https://github.com/Nikhil20051/java-c-cpp-python-mysql-bootstrap"
+license: "MIT"
+abstract: "A complete one-click solution to set up a fresh Windows 11 system with Java, C, C++, Python, and MySQL development environments."
+contact:
+  - name: "dmj.one"
+    email: "contact@dmj.one"
+    url: "https://dmj.one"

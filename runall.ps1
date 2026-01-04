@@ -1,3 +1,11 @@
+﻿<#
+    Copyright (c) 2026 dmj.one
+    
+    This software is part of the dmj.one initiative.
+    Created by Nikhil Bhardwaj.
+    
+    Licensed under the MIT License.
+#>
 <#
 .SYNOPSIS
     Universal Code Runner - Automatically compiles and runs any programming language file.
@@ -415,3 +423,4 @@ if ($exitCode -eq 0) {
 }
 
 exit $exitCode
+

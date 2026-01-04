@@ -1,3 +1,11 @@
+﻿<#
+    Copyright (c) 2026 dmj.one
+    
+    This software is part of the dmj.one initiative.
+    Created by Nikhil Bhardwaj.
+    
+    Licensed under the MIT License.
+#>
 # Self-elevation: Check if running as Administrator
 $currentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
 $isAdmin = $currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
@@ -440,3 +448,4 @@ Write-Host "Press any key to exit..." -ForegroundColor Gray
 Stop-Transcript
 
 $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+

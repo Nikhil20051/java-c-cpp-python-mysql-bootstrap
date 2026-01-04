@@ -284,6 +284,14 @@ pip install mysql-connector-python
 
 This bootstrap system is provided as-is for educational and development purposes.
 
+Licensed under the [MIT License](LICENSE).
+Copyright (c) 2026 [dmj.one](https://dmj.one).
+
+**dmj.one - Dream, Manifest, Journey as ONE**
+
+This project is part of the **dmj.one initiative** by **Nikhil Bhardwaj**.
+
+
 ## 🤝 Contributing
 
 Feel free to submit issues and enhancement requests!

@@ -1,3 +1,9 @@
+﻿@REM Copyright (c) 2026 dmj.one
+@REM
+@REM This software is part of the dmj.one initiative.
+@REM Created by Nikhil Bhardwaj.
+@REM
+@REM Licensed under the MIT License.
 @echo off
 REM ============================================
 REM One-Click Development Environment Installer
@@ -57,3 +63,4 @@ echo   3. Run setup-database.sql in MySQL
 echo   4. Run run-tests.ps1 to test all languages
 echo.
 pause
+

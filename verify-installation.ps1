@@ -1,3 +1,11 @@
+﻿<#
+    Copyright (c) 2026 dmj.one
+    
+    This software is part of the dmj.one initiative.
+    Created by Nikhil Bhardwaj.
+    
+    Licensed under the MIT License.
+#>
 <#
 .SYNOPSIS
     Verifies that all development tools are properly installed
@@ -161,3 +169,4 @@ if ($allPassed) {
 }
 
 Write-Host ""
+

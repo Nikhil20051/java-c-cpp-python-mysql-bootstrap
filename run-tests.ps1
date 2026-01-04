@@ -1,3 +1,11 @@
+﻿<#
+    Copyright (c) 2026 dmj.one
+    
+    This software is part of the dmj.one initiative.
+    Created by Nikhil Bhardwaj.
+    
+    Licensed under the MIT License.
+#>
 <#
 .SYNOPSIS
     Test Runner for all language samples
@@ -335,3 +343,4 @@ Write-Host ("*" * 60) -ForegroundColor Green
 Write-Host "*  Test Run Complete!                                        *" -ForegroundColor Green
 Write-Host ("*" * 60) -ForegroundColor Green
 Write-Host ""
+

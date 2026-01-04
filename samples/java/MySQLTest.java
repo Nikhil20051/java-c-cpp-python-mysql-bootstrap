@@ -1,3 +1,11 @@
+﻿/*
+ * Copyright (c) 2026 dmj.one
+ *
+ * This software is part of the dmj.one initiative.
+ * Created by Nikhil Bhardwaj.
+ *
+ * Licensed under the MIT License.
+ */
 import java.sql.*;
 import java.util.Scanner;
 
@@ -265,10 +273,10 @@ public class MySQLTest {
     }
     
     public static void main(String[] args) {
-        System.out.println("╔══════════════════════════════════════════════════════════╗");
-        System.out.println("║           Java MySQL Connectivity Test                    ║");
-        System.out.println("║           Testing CRUD Operations                         ║");
-        System.out.println("╚══════════════════════════════════════════════════════════╝");
+        System.out.println("â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—");
+        System.out.println("â•‘           Java MySQL Connectivity Test                    â•‘");
+        System.out.println("â•‘           Testing CRUD Operations                         â•‘");
+        System.out.println("â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•");
         
         MySQLTest test = new MySQLTest();
         
@@ -282,10 +290,11 @@ public class MySQLTest {
         test.cleanup();
         
         // Summary
-        System.out.println("\n╔══════════════════════════════════════════════════════════╗");
-        System.out.println("║           All Java MySQL Tests Completed!                 ║");
-        System.out.println("╚══════════════════════════════════════════════════════════╝");
+        System.out.println("\nâ•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—");
+        System.out.println("â•‘           All Java MySQL Tests Completed!                 â•‘");
+        System.out.println("â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•");
         
         test.close();
     }
 }
+

@@ -1,3 +1,9 @@
+﻿# Copyright (c) 2026 dmj.one
+#
+# This software is part of the dmj.one initiative.
+# Created by Nikhil Bhardwaj.
+#
+# Licensed under the MIT License.
 #!/usr/bin/env python3
 """
 Python Basic Test Program
@@ -212,7 +218,7 @@ def test_math():
     print(f"Pi: {math.pi}")
     print(f"E: {math.e}")
     print(f"sqrt(16): {math.sqrt(16)}")
-    print(f"sin(90°): {math.sin(math.radians(90)):.4f}")
+    print(f"sin(90Â°): {math.sin(math.radians(90)):.4f}")
     print(f"log(100): {math.log10(100)}")
     print(f"factorial(5): {math.factorial(5)}")
     print(f"gcd(48, 18): {math.gcd(48, 18)}")
@@ -297,3 +303,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

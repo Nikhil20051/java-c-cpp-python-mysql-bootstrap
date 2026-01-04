@@ -1,3 +1,11 @@
+﻿<#
+    Copyright (c) 2026 dmj.one
+    
+    This software is part of the dmj.one initiative.
+    Created by Nikhil Bhardwaj.
+    
+    Licensed under the MIT License.
+#>
 <#
 .SYNOPSIS
     Quick setup script for copying to new systems
@@ -80,3 +88,4 @@ Write-Host "  3. Start MySQL: net start mysql" -ForegroundColor Gray
 Write-Host ""
 
 Read-Host "Press Enter to exit"
+

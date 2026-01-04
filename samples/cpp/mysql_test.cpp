@@ -1,3 +1,11 @@
+﻿/*
+ * Copyright (c) 2026 dmj.one
+ *
+ * This software is part of the dmj.one initiative.
+ * Created by Nikhil Bhardwaj.
+ *
+ * Licensed under the MIT License.
+ */
 /**
  * C++ MySQL Test Program
  * Demonstrates CRUD operations and database connectivity using MySQL C++ Connector
@@ -410,3 +418,4 @@ int main(int argc, char* argv[]) {
     cout << "\n[OK] Database connection closed." << endl;
     return 0;
 }
+
