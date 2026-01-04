@@ -89,6 +89,7 @@ function Test-JavaVersion {
     }
 }
 
+
 Write-Header "Development Environment Verification"
 
 $allPassed = $true
