@@ -78,8 +78,12 @@ function Write-Error($text) {
     Write-Host "[ERROR] $text" -ForegroundColor Red
 }
 
-# Log file
-$LogFile = "$PSScriptRoot\installation-log.txt"
+# Project root and log file
+$ProjectRoot = Split-Path -Parent $PSScriptRoot
+$LogFile = "$ProjectRoot\logs\installation-log.txt"
+if (!(Test-Path "$ProjectRoot\logs")) {
+    New-Item -ItemType Directory -Path "$ProjectRoot\logs" -Force | Out-Null
+}
 Start-Transcript -Path $LogFile -Append
 
 Write-Header "Development Environment Bootstrap for Windows 11"
@@ -211,10 +215,12 @@ try {
         & $realPython -m pip install --upgrade pip 2>$null
         & $realPython -m pip install mysql-connector-python pymysql 2>$null
         Write-Success "Python MySQL packages installed!"
-    } else {
+    }
+    else {
         Write-Info "Python packages will need to be installed after restart."
     }
-} catch {
+}
+catch {
     Write-Info "Python packages will need to be installed after restart."
 }
 
@@ -243,7 +249,7 @@ Write-Success "MySQL Workbench installed!"
 # ============================================
 Write-Header "Step 6: Installing MySQL Connector/J for Java"
 
-$connectorJPath = "$PSScriptRoot\lib\mysql-connector-j"
+$connectorJPath = "$ProjectRoot\lib\mysql-connector-j"
 if (!(Test-Path $connectorJPath)) {
     New-Item -ItemType Directory -Path $connectorJPath -Force | Out-Null
 }
@@ -274,7 +280,7 @@ else {
 # ============================================
 Write-Header "Step 7: Installing MySQL Connector/C for C/C++"
 
-$connectorCPath = "$PSScriptRoot\lib\mysql-connector-c"
+$connectorCPath = "$ProjectRoot\lib\mysql-connector-c"
 if (!(Test-Path $connectorCPath)) {
     New-Item -ItemType Directory -Path $connectorCPath -Force | Out-Null
 }
@@ -403,9 +409,9 @@ FLUSH PRIVILEGES;
 SELECT 'Database setup completed successfully!' AS status;
 "@
 
-$sqlSetup | Out-File -FilePath "$PSScriptRoot\setup-database.sql" -Encoding UTF8
+$sqlSetup | Out-File -FilePath "$ProjectRoot\database\setup-database.sql" -Encoding UTF8
 Write-Success "Database setup script created!"
-Write-Info "Run the setup-database.sql script in MySQL to create the test database."
+Write-Info "Run the database\setup-database.sql script in MySQL to create the test database."
 
 # ============================================
 # FINAL: Summary and Next Steps
@@ -435,9 +441,9 @@ Write-Host "  3. Set MySQL root password:" -ForegroundColor White
 Write-Host "     mysql -u root" -ForegroundColor Cyan
 Write-Host "     ALTER USER 'root'@'localhost' IDENTIFIED BY 'your_password';" -ForegroundColor Cyan
 Write-Host "  4. Run the test database setup:" -ForegroundColor White
-Write-Host "     mysql -u root -p < setup-database.sql" -ForegroundColor Cyan
+Write-Host "     mysql -u root -p < database\setup-database.sql" -ForegroundColor Cyan
 Write-Host "  5. Run the verification script:" -ForegroundColor White
-Write-Host "     .\verify-installation.ps1" -ForegroundColor Cyan
+Write-Host "     .\VERIFY.bat" -ForegroundColor Cyan
 Write-Host "  6. Run sample programs to test each language" -ForegroundColor White
 Write-Host ""
 

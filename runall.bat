@@ -27,5 +27,5 @@ if "%~1"=="" (
     exit /b 1
 )
 
-powershell -ExecutionPolicy Bypass -File "%~dp0runall.ps1" %*
+powershell -ExecutionPolicy Bypass -File "%~dp0scripts\runall.ps1" %*
 

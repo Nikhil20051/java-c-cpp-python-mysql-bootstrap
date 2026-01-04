@@ -82,27 +82,37 @@ java-c-cpp-python-mysql-bootstrap/
 ├── VERIFY.bat                     # Quick verification (double-click)
 ├── SETUP_DB.bat                   # Database setup helper
 ├── runall.bat                     # Universal code runner
-├── runall.ps1                     # Universal code runner (PowerShell)
-├── install-dev-environment.ps1   # Main PowerShell installation script
-├── verify-installation.ps1       # Verify all tools are installed
-├── run-tests.ps1                 # Run test programs
-├── setup-database.sql            # Create test database and data
-├── README.md                     # This file
-├── lib/                          # Downloaded libraries
-│   └── mysql-connector-j/        # MySQL Java connector
-└── samples/
-    ├── java/
-    │   ├── BasicTest.java        # Basic Java test
-    │   └── MySQLTest.java        # Java MySQL connectivity test
-    ├── python/
-    │   ├── basic_test.py         # Basic Python test
-    │   └── mysql_test.py         # Python MySQL connectivity test
-    ├── c/
-    │   ├── basic_test.c          # Basic C test
-    │   └── mysql_test.c          # C MySQL connectivity test
-    └── cpp/
-        ├── basic_test.cpp        # Basic C++ test
-        └── mysql_test.cpp        # C++ MySQL connectivity test
+├── README.md                      # This file
+├── LICENSE                        # MIT License
+├── CONTRIBUTING.md                # Contribution guidelines
+├── SECURITY.md                    # Security policy
+├── .github/                       # GitHub templates
+├── scripts/                       # PowerShell scripts
+│   ├── install-dev-environment.ps1  # Main installation script
+│   ├── verify-installation.ps1      # Verify all tools are installed
+│   ├── run-tests.ps1                # Run test programs
+│   ├── runall.ps1                   # Universal code runner (PowerShell)
+│   ├── quick-setup.ps1              # Minimal quick setup
+│   └── install-java.ps1             # Java-only installer
+├── database/                      # Database files
+│   └── setup-database.sql           # Create test database and data
+├── lib/                           # Downloaded libraries
+│   └── mysql-connector-j/           # MySQL Java connector
+├── samples/                       # Sample programs
+│   ├── java/
+│   │   ├── BasicTest.java           # Basic Java test
+│   │   └── MySQLTest.java           # Java MySQL connectivity test
+│   ├── python/
+│   │   ├── basic_test.py            # Basic Python test
+│   │   └── mysql_test.py            # Python MySQL connectivity test
+│   ├── c/
+│   │   ├── basic_test.c             # Basic C test
+│   │   └── mysql_test.c             # C MySQL connectivity test
+│   └── cpp/
+│       ├── basic_test.cpp           # Basic C++ test
+│       └── mysql_test.cpp           # C++ MySQL connectivity test
+└── logs/                          # Generated logs (gitignored)
+    └── installation-log.txt
 ```
 
 ## 🔧 Post-Installation Setup
@@ -142,7 +152,7 @@ EXIT;
 ### 4. Create Test Database
 
 ```powershell
-mysql -u root -p < setup-database.sql
+mysql -u root -p < database\setup-database.sql
 ```
 
 ## 🧪 Running Tests
@@ -152,15 +162,15 @@ mysql -u root -p < setup-database.sql
 Test that compilers and interpreters are working:
 
 ```powershell
-.\run-tests.ps1 basic
+.\scripts\run-tests.ps1 basic
 ```
 
 Or test individual languages:
 ```powershell
-.\run-tests.ps1 java -Basic
-.\run-tests.ps1 python -Basic
-.\run-tests.ps1 c -Basic
-.\run-tests.ps1 cpp -Basic
+.\scripts\run-tests.ps1 java -Basic
+.\scripts\run-tests.ps1 python -Basic
+.\scripts\run-tests.ps1 c -Basic
+.\scripts\run-tests.ps1 cpp -Basic
 ```
 
 ### MySQL Connectivity Tests
@@ -169,13 +179,13 @@ After setting up MySQL:
 
 ```powershell
 # Test all languages with MySQL
-.\run-tests.ps1 all
+.\scripts\run-tests.ps1 all
 
 # Or test individually
-.\run-tests.ps1 java
-.\run-tests.ps1 python
-.\run-tests.ps1 c
-.\run-tests.ps1 cpp
+.\scripts\run-tests.ps1 java
+.\scripts\run-tests.ps1 python
+.\scripts\run-tests.ps1 c
+.\scripts\run-tests.ps1 cpp
 ```
 
 ## 📝 Sample Programs
@@ -218,7 +228,7 @@ g++ -o mysql_test.exe mysql_test.cpp -I"%MYSQL_INCLUDE%" -L"%MYSQL_LIB%" -lmysql
 Run the verification script to check all installations:
 
 ```powershell
-.\verify-installation.ps1
+.\VERIFY.bat
 ```
 
 Expected output:
@@ -236,7 +246,7 @@ Expected output:
 
 ## 🗄️ Test Database
 
-The `setup-database.sql` script creates:
+The `database\setup-database.sql` script creates:
 
 - **Database**: `testdb`
 - **User**: `testuser` / `testpass123`

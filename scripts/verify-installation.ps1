@@ -60,7 +60,8 @@ Write-Host "`nChecking Java..." -ForegroundColor Yellow
 if (!(Test-JavaVersion)) { $allPassed = $false }
 if ($env:JAVA_HOME) {
     Write-Host "       JAVA_HOME: $env:JAVA_HOME" -ForegroundColor Gray
-} else {
+}
+else {
     Write-Host "       JAVA_HOME: Not set" -ForegroundColor Red
 }
 
@@ -98,7 +99,8 @@ Write-Host "`nChecking Python MySQL packages..." -ForegroundColor Yellow
 $pythonCheck = python -c "import mysql.connector; print(f'mysql-connector-python {mysql.connector.__version__}')" 2>&1
 if ($LASTEXITCODE -eq 0) {
     Write-Host "[PASS] mysql-connector-python installed" -ForegroundColor Green
-} else {
+}
+else {
     Write-Host "[FAIL] mysql-connector-python not installed" -ForegroundColor Red
     $allPassed = $false
 }
@@ -119,10 +121,12 @@ $mysqlService = Get-Service -Name "MySQL*" -ErrorAction SilentlyContinue
 if ($mysqlService) {
     if ($mysqlService.Status -eq "Running") {
         Write-Host "[PASS] MySQL Service is running" -ForegroundColor Green
-    } else {
+    }
+    else {
         Write-Host "[WARN] MySQL Service exists but is not running" -ForegroundColor Yellow
     }
-} else {
+}
+else {
     Write-Host "[WARN] MySQL Service not found" -ForegroundColor Yellow
 }
 
@@ -146,7 +150,8 @@ foreach ($var in $envVars) {
     $value = [System.Environment]::GetEnvironmentVariable($var, "Machine")
     if ($value) {
         Write-Host "[PASS] $var = $value" -ForegroundColor Green
-    } else {
+    }
+    else {
         Write-Host "[WARN] $var is not set" -ForegroundColor Yellow
     }
 }
@@ -158,14 +163,15 @@ if ($allPassed) {
     Write-Host "All core components are installed correctly!" -ForegroundColor Green
     Write-Host ""
     Write-Host "You can now run the sample programs to test the setup:" -ForegroundColor White
-    Write-Host "  - Java:   .\run-tests.ps1 java" -ForegroundColor Cyan
-    Write-Host "  - C:      .\run-tests.ps1 c" -ForegroundColor Cyan
-    Write-Host "  - C++:    .\run-tests.ps1 cpp" -ForegroundColor Cyan
-    Write-Host "  - Python: .\run-tests.ps1 python" -ForegroundColor Cyan
-    Write-Host "  - All:    .\run-tests.ps1 all" -ForegroundColor Cyan
-} else {
+    Write-Host "  - Java:   .\scripts\run-tests.ps1 java" -ForegroundColor Cyan
+    Write-Host "  - C:      .\scripts\run-tests.ps1 c" -ForegroundColor Cyan
+    Write-Host "  - C++:    .\scripts\run-tests.ps1 cpp" -ForegroundColor Cyan
+    Write-Host "  - Python: .\scripts\run-tests.ps1 python" -ForegroundColor Cyan
+    Write-Host "  - All:    .\scripts\run-tests.ps1 all" -ForegroundColor Cyan
+}
+else {
     Write-Host "Some components are missing or not properly configured." -ForegroundColor Red
-    Write-Host "Please run install-dev-environment.ps1 to install missing components." -ForegroundColor Yellow
+    Write-Host "Please run INSTALL.bat to install missing components." -ForegroundColor Yellow
 }
 
 Write-Host ""

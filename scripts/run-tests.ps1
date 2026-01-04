@@ -27,7 +27,7 @@
 #>
 
 param(
-    [Parameter(Position=0)]
+    [Parameter(Position = 0)]
     [ValidateSet("java", "c", "cpp", "python", "all", "basic")]
     [string]$Language = "all",
     
@@ -35,7 +35,7 @@ param(
 )
 
 $ErrorActionPreference = "Continue"
-$ScriptRoot = $PSScriptRoot
+$ScriptRoot = Split-Path -Parent $PSScriptRoot
 
 function Write-Header($text) {
     Write-Host ""
@@ -72,7 +72,8 @@ function Test-Java {
                 java BasicTest
                 Write-Host ""
                 Write-Host "[OK] Java basic test completed!" -ForegroundColor Green
-            } else {
+            }
+            else {
                 Write-Host "[ERROR] Compilation failed!" -ForegroundColor Red
             }
         }
@@ -113,7 +114,8 @@ function Test-Java {
                     Write-Host "[OK] Compilation successful!" -ForegroundColor Green
                     Write-Host "`nRunning MySQL test..." -ForegroundColor Yellow
                     java -cp $classpath MySQLTest
-                } else {
+                }
+                else {
                     Write-Host "[ERROR] Compilation failed!" -ForegroundColor Red
                 }
             }
@@ -173,7 +175,8 @@ function Test-C {
                 .\basic_test.exe
                 Write-Host ""
                 Write-Host "[OK] C basic test completed!" -ForegroundColor Green
-            } else {
+            }
+            else {
                 Write-Host "[ERROR] Compilation failed!" -ForegroundColor Red
             }
         }
@@ -217,7 +220,8 @@ function Test-C {
                     Write-Host "[OK] Compilation successful!" -ForegroundColor Green
                     Write-Host "`nRunning MySQL test..." -ForegroundColor Yellow
                     .\mysql_test.exe
-                } else {
+                }
+                else {
                     Write-Host "[ERROR] Compilation failed!" -ForegroundColor Red
                     Write-Host "Note: C MySQL connectivity requires MySQL C library (libmysqlclient)" -ForegroundColor Yellow
                 }
@@ -251,7 +255,8 @@ function Test-Cpp {
                 .\basic_test.exe
                 Write-Host ""
                 Write-Host "[OK] C++ basic test completed!" -ForegroundColor Green
-            } else {
+            }
+            else {
                 Write-Host "[ERROR] Compilation failed!" -ForegroundColor Red
             }
         }
@@ -295,7 +300,8 @@ function Test-Cpp {
                     Write-Host "[OK] Compilation successful!" -ForegroundColor Green
                     Write-Host "`nRunning MySQL test..." -ForegroundColor Yellow
                     .\mysql_test.exe
-                } else {
+                }
+                else {
                     Write-Host "[ERROR] Compilation failed!" -ForegroundColor Red
                     Write-Host "Note: C++ MySQL connectivity requires MySQL C library (libmysqlclient)" -ForegroundColor Yellow
                 }

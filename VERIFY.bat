@@ -6,7 +6,7 @@
 @REM Licensed under the MIT License.
 @echo off
 echo Running verification script...
-powershell -ExecutionPolicy Bypass -File "%~dp0verify-installation.ps1"
+powershell -ExecutionPolicy Bypass -File "%~dp0scripts\verify-installation.ps1"
 echo.
 pause
 

@@ -26,4 +26,4 @@ Desktop.ini
 
 # Logs
 *.log
-installation-log.txt
+logs/

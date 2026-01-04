@@ -47,10 +47,10 @@
 #>
 
 param(
-    [Parameter(Mandatory=$true, Position=0)]
+    [Parameter(Mandatory = $true, Position = 0)]
     [string]$FilePath,
     
-    [Parameter(ValueFromRemainingArguments=$true)]
+    [Parameter(ValueFromRemainingArguments = $true)]
     [string[]]$Args,
     
     [switch]$KeepExe,
@@ -160,7 +160,8 @@ switch ($FileExtension) {
         
         if ($classMatch.Success) {
             $className = $classMatch.Groups[1].Value
-        } else {
+        }
+        else {
             # Fallback: use filename as class name
             $className = $FileBaseName
             Write-Warn "Could not find 'public class'. Using filename as class: $className"
@@ -174,9 +175,10 @@ switch ($FileExtension) {
         
         if ($usesJDBC) {
             Write-Info "JDBC usage detected, adding MySQL connector to classpath..."
+            $projectRoot = Split-Path -Parent $PSScriptRoot
             $connectorPaths = @(
-                "$PSScriptRoot\lib\mysql-connector-j\mysql-connector-j-8.3.0\mysql-connector-j-8.3.0.jar",
-                "$PSScriptRoot\lib\mysql-connector-j-8.3.0.jar",
+                "$projectRoot\lib\mysql-connector-j\mysql-connector-j-8.3.0\mysql-connector-j-8.3.0.jar",
+                "$projectRoot\lib\mysql-connector-j-8.3.0.jar",
                 "C:\Program Files\MySQL\Connector J 8.0\mysql-connector-j-8.0.*.jar"
             )
             foreach ($cp in $connectorPaths) {
@@ -243,7 +245,8 @@ switch ($FileExtension) {
             $mysqlLib = $env:MYSQL_LIB
             if ($mysqlInclude -and $mysqlLib) {
                 $compileArgs += @("-I$mysqlInclude", "-L$mysqlLib", "-lmysqlclient")
-            } else {
+            }
+            else {
                 Write-Warn "MYSQL_INCLUDE or MYSQL_LIB not set. Compilation may fail."
             }
         }
@@ -272,7 +275,7 @@ switch ($FileExtension) {
     # ----------------------------------------
     # C++
     # ----------------------------------------
-    {$_ -in ".cpp", ".cxx", ".cc"} {
+    { $_ -in ".cpp", ".cxx", ".cc" } {
         Write-Info "Language: C++"
         
         $gpp = Get-Command g++ -ErrorAction SilentlyContinue
@@ -295,7 +298,8 @@ switch ($FileExtension) {
             $mysqlLib = $env:MYSQL_LIB
             if ($mysqlInclude -and $mysqlLib) {
                 $compileArgs += @("-I$mysqlInclude", "-L$mysqlLib", "-lmysqlclient")
-            } else {
+            }
+            else {
                 Write-Warn "MYSQL_INCLUDE or MYSQL_LIB not set. Compilation may fail."
             }
         }
@@ -353,7 +357,7 @@ switch ($FileExtension) {
     # ----------------------------------------
     # BATCH
     # ----------------------------------------
-    {$_ -in ".bat", ".cmd"} {
+    { $_ -in ".bat", ".cmd" } {
         Write-Info "Language: Batch Script"
         Write-Host ""
         Write-Host "----------------------------------------" -ForegroundColor Gray
@@ -378,7 +382,8 @@ switch ($FileExtension) {
         
         if ($MySQLPass) {
             & mysql -u $MySQLUser -p"$MySQLPass" -e "source $($File.FullName)"
-        } else {
+        }
+        else {
             Write-Info "No password provided. Trying without password..."
             & mysql -u $MySQLUser -e "source $($File.FullName)" 2>$null
             if ($LASTEXITCODE -ne 0) {
@@ -418,7 +423,8 @@ Write-Host ""
 Write-Host "----------------------------------------" -ForegroundColor Gray
 if ($exitCode -eq 0) {
     Write-Success "Execution completed successfully! (${duration}s)"
-} else {
+}
+else {
     Write-Err "Execution failed with exit code: $exitCode (${duration}s)"
 }
 

@@ -41,7 +41,7 @@ echo Press any key to continue or Ctrl+C to cancel...
 pause >nul
 
 REM Run the PowerShell installation script
-powershell -ExecutionPolicy Bypass -File "%~dp0install-dev-environment.ps1"
+powershell -ExecutionPolicy Bypass -File "%~dp0scripts\install-dev-environment.ps1"
 
 if %errorlevel% neq 0 (
     echo.
