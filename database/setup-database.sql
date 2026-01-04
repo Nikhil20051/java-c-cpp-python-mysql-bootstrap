@@ -3,7 +3,7 @@
 -- User: appuser
 
 -- Create test database
-CREATE DATABASE IF NOT EXISTS testdb;
+CREATE DATABASE IF NOT EXISTS testdb CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE testdb;
 
 -- Drop tables if they exist to ensure clean state

@@ -1,0 +1,66 @@
+name: Enterprise Compliance & Integrity
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  static-analysis:
+    name: Code Quality Assurance
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+    
+    - name: Run ShellCheck
+      uses: ludeeus/action-shellcheck@master
+      with:
+        scandir: './scripts'
+        format: 'gcc'
+      continue-on-error: true # Non-blocking for now
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+        
+    - name: Install Linting Tools
+      run: |
+        pip install flake8
+        
+    - name: Lint Python Samples
+      run: |
+        # stop the build if there are Python syntax errors or undefined names
+        flake8 ./samples/python --count --select=E9,F63,F7,F82 --show-source --statistics
+        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+        flake8 ./samples/python --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+  file-integrity:
+    name: Project Structure Validation
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+      
+    - name: Verify Essential Files
+      run: |
+        $requiredFiles = @(
+            "start.bat",
+            "README.md",
+            "scripts/install-dev-environment.ps1",
+            "scripts/d1run.ps1",
+            "database/setup-database.sql"
+        )
+        
+        foreach ($file in $requiredFiles) {
+            if (-not (Test-Path $file)) {
+                Write-Error "Critical file missing: $file"
+                exit 1
+            }
+            Write-Host "Verified: $file"
+        }
+        Write-Host "Integrity Check Passed"

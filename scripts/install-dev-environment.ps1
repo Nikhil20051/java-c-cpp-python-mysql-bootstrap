@@ -58,6 +58,41 @@ function Write-ColorOutput($ForegroundColor) {
     $host.UI.RawUI.ForegroundColor = $fc
 }
 
+function Install-WinGetPackage {
+    param (
+        [string]$Id,
+        [string]$Name,
+        [string]$Source = "msstore"
+    )
+    
+    Write-Info "Checking $Source for $Name ($Id)..."
+    
+    # Check if winget is available
+    if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
+        Write-Info "Winget not found. Skipping store check."
+        return $false
+    }
+
+    try {
+        # Search first
+        $search = winget search --id $Id --source $Source
+        if ($LASTEXITCODE -eq 0) {
+            Write-Info "Found $Name in $Source. Installing..."
+            winget install --id $Id --source $Source --accept-package-agreements --accept-source-agreements --force
+            
+            if ($LASTEXITCODE -eq 0) {
+                Write-Success "$Name installed successfully from $Source!"
+                return $true
+            }
+        }
+    }
+    catch {
+        Write-Info "Winget install failed: $_"
+    }
+    
+    return $false
+}
+
 function Write-Header($text) {
     Write-Host ""
     Write-Host "============================================" -ForegroundColor Cyan
@@ -233,15 +268,23 @@ if (!$pythonExe) {
     
     if ($pythonChoice -eq "1") {
         Write-Info "Installing Latest Python..."
-        choco install python -y
-        if ($LASTEXITCODE -ne 0) {
-            Write-Info "Trying alternative python package..."
-            choco install python3 -y
+        
+        # Try Windows Store first (Python 3.13)
+        $installedFromStore = Install-WinGetPackage -Id "9PNRBTZXMB4Z" -Name "Python 3.13" -Source "msstore"
+        
+        if (-not $installedFromStore) {
+            Write-Info "Store installation failed or unavailable. Falling back to Chocolatey..."
+            choco install python -y
+            if ($LASTEXITCODE -ne 0) {
+                Write-Info "Trying alternative python package..."
+                choco install python3 -y
+            }
         }
         Write-Success "Latest Python installed!"
     }
     else {
-        Write-Info "Installing Python 3.8..."
+        Write-Info "Installing Python 3.8 (Legacy)..."
+        # Python 3.8 is not typically on the Store (only latest). Using Chocolatey.
         choco install python --version=3.8.10 -y
         if ($LASTEXITCODE -ne 0) {
             Write-Info "Trying alternative python38 package..."
@@ -252,6 +295,30 @@ if (!$pythonExe) {
 }
 else {
     Write-Success "Python is already installed: $($pythonExe.Source)"
+}
+
+# Ensure python3 command exists (create alias if missing)
+if (-not (Get-Command python3 -ErrorAction SilentlyContinue)) {
+    $py = Get-Command python -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source -First 1
+    if ($py) {
+        Write-Info "Creating 'python3' compatibility alias..."
+        try {
+            $dir = Split-Path $py
+            $dest = Join-Path $dir "python3.exe"
+            if (-not (Test-Path $dest)) {
+                Copy-Item $py $dest -Force -ErrorAction SilentlyContinue
+                if (-not (Test-Path $dest)) {
+                    # Fallback for write protection: create bat in script dir
+                    $batPath = Join-Path $PSScriptRoot "python3.bat"
+                    Set-Content -Path $batPath -Value "@echo off`r`npython %*"
+                    Write-Info "Created python3.bat wrapper in scripts folder."
+                }
+            }
+        }
+        catch {
+            Write-Info "Could not create python3 alias: $_"
+        }
+    }
 }
 
 # Refresh environment
@@ -590,7 +657,9 @@ else {
 $codeCheck = Get-Command code -ErrorAction SilentlyContinue
 if (!$codeCheck) {
     Write-Info "Installing Visual Studio Code..."
-    choco install vscode -y
+    if (-not (Install-WinGetPackage -Id "XP9KHM4BK9FZ7Q" -Name "Visual Studio Code" -Source "msstore")) {
+        choco install vscode -y
+    }
     Write-Success "VS Code installed!"
 }
 else {

@@ -191,13 +191,23 @@ function Update-ProjectVersion {
                 $minor = [int]$matches[2]
                 $patch = [int]$matches[3]
                 
-                # Increment patch version safely
+                # Increment with rollover logic (0-9)
                 $patch++
+                
+                if ($patch -ge 10) {
+                    $patch = 0
+                    $minor++
+                }
+                
+                if ($minor -ge 10) {
+                    $minor = 0
+                    $major++
+                }
                 
                 $newVersionString = "$major.$minor.$patch"
                 
-                # Write back to file without trailing newlines if possible, or simple text
-                [System.IO.File]::WriteAllText($versionFile, $newVersionString)
+                # Write back to file accurately
+                Set-Content $versionFile -Value $newVersionString -NoNewline
                 
                 Write-Log "Bumped project version to $newVersionString" "SUCCESS"
             }
@@ -264,6 +274,45 @@ function Invoke-AutoPush {
             if ($LASTEXITCODE -eq 0) {
                 Write-Log "Successfully pushed to remote repository" "SUCCESS"
                 return $true
+            }
+            elseif ($pushResult -match "refusing to allow .* workflow") {
+                Write-Log "PERMISSION ISSUE: Token lacks 'workflow' scope. Excluding workflow files..." "WARNING"
+                
+                # Undo the failed commit
+                git reset --soft HEAD~1 2>$null
+                
+                # Unstage workflow files
+                git reset HEAD .github/workflows 2>$null
+                
+                # Check for remaining changes
+                $remainingChanges = git diff --cached --name-only
+                
+                if ($remainingChanges) {
+                    # Re-commit safe files
+                    $safeMsg = "Auto-push (workflow files excluded due to permissions)`n`nOriginal trigger: $TotalChanges lines changed."
+                    $safeMsgFile = [System.IO.Path]::GetTempFileName()
+                    Set-Content $safeMsgFile -Value $safeMsg
+                    
+                    git -c "user.name=$BotName" -c "user.email=$BotEmail" commit -F $safeMsgFile >$null 2>&1
+                    Remove-Item $safeMsgFile -Force -ErrorAction SilentlyContinue
+                    
+                    # Retry Push
+                    $retryResult = git push origin HEAD 2>&1
+                    
+                    if ($LASTEXITCODE -eq 0) {
+                        Write-Log "Successfully pushed changes (workflow files excluded)" "SUCCESS"
+                        return $true
+                    }
+                    else {
+                        Write-Log "Retry failed: $retryResult" "ERROR"
+                        git reset --soft HEAD~1 2>$null
+                        return $false
+                    }
+                }
+                else {
+                    Write-Log "Only workflow files changed. Cannot push without permissions." "WARNING"
+                    return $false
+                }
             }
             else {
                 Write-Log "Failed to push: $pushResult" "ERROR"
