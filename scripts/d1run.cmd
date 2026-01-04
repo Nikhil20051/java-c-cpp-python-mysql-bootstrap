@@ -6,29 +6,19 @@
 @REM Licensed under the MIT License.
 @echo off
 REM ============================================
-REM d1run - Universal Code Runner
-REM Usage: d1run [filename] [options]
-REM All parameters are optional!
+REM d1run v3.1 - Universal Code Runner
+REM Usage: d1run [filename] [arguments...]
+REM 
+REM Features:
+REM   - Python: Auto-create venv + install requirements.txt
+REM   - C/C++: Auto-install missing dependencies via vcpkg
+REM   - Automatic execution policy bypass (no prompts!)
 REM ============================================
 
 REM Get the directory where this script is located
 set "D1RUN_SCRIPT_DIR=%~dp0"
 
-REM Check if we already confirmed bypass for this session
-if "%D1RUN_CONFIRMED%"=="1" goto RUN
-
-:ASK
-echo script execution policy check:
-set /P "AREYOUSURE=Allow d1run to bypass execution policy for this session? (Y/N) "
-if /I "%AREYOUSURE%"=="Y" (
-    set "D1RUN_CONFIRMED=1"
-    goto RUN
-)
-echo Action cancelled.
-exit /b 1
-
-:RUN
-REM Execute the PowerShell script with all arguments
+REM Execute directly with bypass - d1run is a trusted tool
 powershell -ExecutionPolicy Bypass -NoProfile -File "%D1RUN_SCRIPT_DIR%d1run-impl.ps1" %*
 
 exit /b %ERRORLEVEL%

@@ -22,12 +22,12 @@ def main():
         response = requests.get("https://httpbin.org/json", timeout=5)
         if response.status_code == 200:
             data = response.json()
-            print(f"{Fore.GREEN}✓ Request successful!{Style.RESET_ALL}")
+            print(f"{Fore.GREEN}[OK] Request successful!{Style.RESET_ALL}")
             print(f"  Response title: {data.get('slideshow', {}).get('title', 'N/A')}")
         else:
-            print(f"{Fore.RED}✗ Request failed with status: {response.status_code}{Style.RESET_ALL}")
+            print(f"{Fore.RED}[FAIL] Request failed with status: {response.status_code}{Style.RESET_ALL}")
     except Exception as e:
-        print(f"{Fore.RED}✗ Request error: {e}{Style.RESET_ALL}")
+        print(f"{Fore.RED}[FAIL] Request error: {e}{Style.RESET_ALL}")
     
     print()
     print(f"{Fore.MAGENTA}Both 'requests' and 'colorama' were installed automatically!{Style.RESET_ALL}")
