@@ -38,6 +38,7 @@ TEST_SANDBOX.bat
 # Auto-push monitor runtime files
 scripts/auto-push-monitor/monitor.pid
 scripts/auto-push-monitor/monitor.log
+scripts/auto-push-monitor/config.json
 
 # Credentials and configuration (auto-generated on fresh install)
 .credentials.json

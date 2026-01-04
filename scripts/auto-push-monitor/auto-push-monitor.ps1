@@ -176,6 +176,39 @@ function Get-UnstagedChanges {
     }
 }
 
+function Update-ProjectVersion {
+    param([string]$RepoPath)
+    
+    $versionFile = Join-Path $RepoPath "VERSION"
+    $newVersionString = $null
+    
+    if (Test-Path $versionFile) {
+        try {
+            $content = Get-Content $versionFile -Raw
+            # Match standard SemVer X.Y.Z
+            if ($content -match "(\d+)\.(\d+)\.(\d+)") {
+                $major = [int]$matches[1]
+                $minor = [int]$matches[2]
+                $patch = [int]$matches[3]
+                
+                # Increment patch version safely
+                $patch++
+                
+                $newVersionString = "$major.$minor.$patch"
+                
+                # Write back to file without trailing newlines if possible, or simple text
+                [System.IO.File]::WriteAllText($versionFile, $newVersionString)
+                
+                Write-Log "Bumped project version to $newVersionString" "SUCCESS"
+            }
+        }
+        catch {
+            Write-Log "Failed to update VERSION file: $_" "WARNING"
+        }
+    }
+    return $newVersionString
+}
+
 function Invoke-AutoPush {
     param(
         [string]$RepoPath,
@@ -189,16 +222,20 @@ function Invoke-AutoPush {
     try {
         Write-Log "Detected $TotalChanges line changes - initiating auto-push..." "WARNING"
         
+        # Update version before adding files
+        $currentVersion = Update-ProjectVersion -RepoPath $RepoPath
+        
         git add -A 2>$null
         
         $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+        $versionTag = if ($currentVersion) { "[v$currentVersion]" } else { "" }
         
         # Use a temporary file for the commit message
         $msgFile = [System.IO.Path]::GetTempFileName()
         
         try {
             # 1. Concise Header (Reviewable at a glance)
-            "[AUTO-PRESERVE] Saved $TotalChanges lines across $($ChangedFiles.Count) files" | Set-Content $msgFile -Encoding UTF8
+            "[AUTO-PRESERVE] $versionTag Saved $TotalChanges lines across $($ChangedFiles.Count) files" | Set-Content $msgFile -Encoding UTF8
             "" | Add-Content $msgFile
             "Automated snapshot triggered by high-volume change." | Add-Content $msgFile
             "Timestamp: $timestamp" | Add-Content $msgFile
