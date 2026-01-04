@@ -2,14 +2,26 @@
 
 A complete one-click solution to set up a fresh Windows 11 system with Java, C, C++, Python, and MySQL development environments.
 
-## 🚀 Quick Start
+## 🚀 Zero-Knowledge Quick Start
 
-### One-Click Installation
+**Just want to get started? Follow these 3 steps:**
 
-1. **Right-click** on `INSTALL.bat` and select **"Run as administrator"**
-2. Wait for the installation to complete (15-30 minutes)
-3. **Restart your computer**
-4. Run `verify-installation.ps1` to confirm everything is installed
+1.  **Download & Unzip**: Click the green "< Code >" button above, select "Download ZIP", and extract it to a folder.
+2.  **Install**: Open the folder, right-click on `INSTALL.bat`, and select **"Run as administrator"**.
+    *   *Note: If a blue window appears saying "Windows protected your PC", click "More info" -> "Run anyway".*
+3.  **Restart**: When the black window says "Installation Complete!", restart your computer.
+
+That's it! All tools (Java, Python, C++, MySQL) are now installed.
+
+### Verification (Optional)
+After restarting, you can verify everything is working:
+1.  Double-click `VERIFY.bat`.
+2.  You should see a list of green `[PASS]` messages.
+
+### Database Setup
+To set up the test database (needed for samples):
+1.  Double-click `SETUP_DB.bat`.
+2.  If asked, enter the password you set (or just press Enter if you didn't set one).
 
 ### What Gets Installed
 
