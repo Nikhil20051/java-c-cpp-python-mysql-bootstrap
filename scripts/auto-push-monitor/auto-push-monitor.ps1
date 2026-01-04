@@ -192,14 +192,32 @@ function Invoke-AutoPush {
         git add -A 2>$null
         
         $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-        $fileList = ($ChangedFiles | ForEach-Object { $_.File }) -join ", "
-        if ($fileList.Length -gt 100) {
-            $fileList = $fileList.Substring(0, 97) + "..."
-        }
         
-        $commitMessage = "[AUTO-PRESERVE] High-volume change detected ($TotalChanges lines)`n`nSystem automatically pushed these changes to ensure safety during major refactoring.`n`nFiles Affected: $($ChangedFiles.Count) files including $fileList`nTimestamp: $timestamp"
-
-        $commitResult = git -c "user.name=$BotName" -c "user.email=$BotEmail" commit -m $commitMessage 2>&1
+        # Use a temporary file for the commit message
+        $msgFile = [System.IO.Path]::GetTempFileName()
+        
+        try {
+            # 1. Concise Header (Reviewable at a glance)
+            "[AUTO-PRESERVE] Saved $TotalChanges lines across $($ChangedFiles.Count) files" | Set-Content $msgFile -Encoding UTF8
+            "" | Add-Content $msgFile
+            "Automated snapshot triggered by high-volume change." | Add-Content $msgFile
+            "Timestamp: $timestamp" | Add-Content $msgFile
+            "" | Add-Content $msgFile
+            
+            # 2. File Summary (The meaningful info)
+            "CHANGED FILES:" | Add-Content $msgFile
+            "--------------" | Add-Content $msgFile
+            $stat = git diff --cached --stat 2>&1
+            if ($stat) { 
+                $stat | Add-Content $msgFile 
+            }
+            
+            # 4. Commit using the file
+            $commitResult = git -c "user.name=$BotName" -c "user.email=$BotEmail" commit -F $msgFile 2>&1
+        }
+        finally {
+            if (Test-Path $msgFile) { Remove-Item $msgFile -Force -ErrorAction SilentlyContinue }
+        }
         
         if ($LASTEXITCODE -eq 0) {
             Write-Log "Created commit with bot identity: $BotName" "SUCCESS"
