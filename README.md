@@ -79,6 +79,7 @@ Run **any** code file with a single command! No need to remember compile command
 ```
 java-c-cpp-python-mysql-bootstrap/
 ├── INSTALL.bat                    # One-click installer (run as admin)
+├── UNINSTALL.bat                  # One-click uninstaller (run as admin)
 ├── VERIFY.bat                     # Quick verification (double-click)
 ├── SETUP_DB.bat                   # Database setup helper
 ├── runall.bat                     # Universal code runner
@@ -89,6 +90,7 @@ java-c-cpp-python-mysql-bootstrap/
 ├── .github/                       # GitHub templates
 ├── scripts/                       # PowerShell scripts
 │   ├── install-dev-environment.ps1  # Main installation script
+│   ├── uninstall-dev-environment.ps1 # Uninstallation script
 │   ├── verify-installation.ps1      # Verify all tools are installed
 │   ├── run-tests.ps1                # Run test programs
 │   ├── runall.ps1                   # Universal code runner (PowerShell)
@@ -289,6 +291,46 @@ pip install mysql-connector-python
 1. Copy the entire folder to the new system
 2. Right-click `INSTALL.bat` → "Run as administrator"
 3. Follow post-installation steps above
+
+## 🗑️ Uninstallation
+
+To completely remove everything installed by this bootstrap:
+
+### Quick Uninstall
+1. Right-click `UNINSTALL.bat` → **"Run as administrator"**
+2. Type `UNINSTALL` when prompted to confirm
+3. Restart your computer
+
+### What Gets Removed
+- Java (Eclipse Temurin JDK 21)
+- MinGW-w64 (C/C++ Compiler)
+- Python 3.12 and MySQL packages
+- MySQL Server and Workbench
+- Git
+- Visual Studio Code
+- Environment variables (JAVA_HOME, MYSQL_INCLUDE, MYSQL_LIB)
+- Downloaded MySQL connectors
+- Test database (`testdb`) and user (`testuser`)
+
+### What Is NOT Removed
+- Chocolatey (may be used by other software)
+- Your own projects and code
+- System files or other software
+
+### Advanced Options
+
+```powershell
+# Uninstall everything without prompts
+.\scripts\uninstall-dev-environment.ps1 -All
+
+# Keep MySQL databases and data
+.\scripts\uninstall-dev-environment.ps1 -All -KeepData
+
+# Uninstall specific component only
+.\scripts\uninstall-dev-environment.ps1 -Component mysql
+.\scripts\uninstall-dev-environment.ps1 -Component python
+.\scripts\uninstall-dev-environment.ps1 -Component java
+```
 
 ## 📄 License
 
