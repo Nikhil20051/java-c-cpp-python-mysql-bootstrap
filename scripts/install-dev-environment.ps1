@@ -24,9 +24,9 @@ if (-not $isAdmin) {
 .DESCRIPTION
     This script will install and configure:
     - Chocolatey Package Manager
-    - Java Development Kit (JDK 21)
+    - Java Development Kit (Latest OpenJDK)
     - MinGW-w64 (GCC/G++ for C/C++)
-    - Python 3.12+
+    - Python (Latest or 3.8 - User Choice)
     - MySQL Server and MySQL Workbench
     - MySQL Connectors for all languages
     - All required environment variables
@@ -120,21 +120,21 @@ $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";
 choco feature enable -n allowGlobalConfirmation
 
 # ============================================
-# STEP 2: Install Java Development Kit
+# STEP 2: Install Java Development Kit (Latest OpenJDK)
 # ============================================
-Write-Header "Step 2: Installing Java Development Kit (JDK 21)"
+Write-Header "Step 2: Installing Java Development Kit (Latest OpenJDK)"
 
 # Try to find real java (not Windows Store alias)
 $javaExe = Get-Command java -ErrorAction SilentlyContinue | Where-Object { $_.Source -notlike "*WindowsApps*" }
 if (!$javaExe) {
-    Write-Info "Installing Eclipse Temurin JDK 21..."
-    # temurin21 is the reliable package name
-    choco install temurin21 -y
+    Write-Info "Installing Latest OpenJDK..."
+    # Install the latest OpenJDK available through chocolatey
+    choco install openjdk -y
     if ($LASTEXITCODE -ne 0) {
-        Write-Info "Trying alternative: temurin..."
+        Write-Info "Trying alternative: temurin (Eclipse Adoptium)..."
         choco install temurin -y
     }
-    Write-Success "Java JDK installed!"
+    Write-Success "Java JDK (Latest OpenJDK) installed!"
 }
 else {
     Write-Success "Java is already installed: $($javaExe.Source)"
@@ -143,21 +143,27 @@ else {
 # Refresh PATH after Java install
 $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
 
-# Set JAVA_HOME - check multiple possible locations
+# Set JAVA_HOME - check multiple possible locations (ordered by latest versions first)
 $javaPaths = @(
-    "C:\Program Files\Eclipse Adoptium\jdk-21*",
-    "C:\Program Files\OpenJDK\jdk-21",
-    "C:\Program Files\Java\jdk-21*",
-    "C:\Program Files\Eclipse Adoptium\jdk-*"
+    "C:\Program Files\OpenJDK\openjdk-*",
+    "C:\Program Files\Eclipse Adoptium\jdk-*",
+    "C:\Program Files\OpenJDK\jdk-*",
+    "C:\Program Files\Java\jdk-*"
 )
+$javaHome = $null
 foreach ($pattern in $javaPaths) {
-    $found = Get-ChildItem -Path $pattern -Directory -ErrorAction SilentlyContinue | Select-Object -First 1
+    # Get all matching directories and sort by version (descending) to get the latest
+    $found = Get-ChildItem -Path $pattern -Directory -ErrorAction SilentlyContinue | Sort-Object Name -Descending | Select-Object -First 1
     if ($found) {
         [System.Environment]::SetEnvironmentVariable("JAVA_HOME", $found.FullName, "Machine")
         $env:JAVA_HOME = $found.FullName
+        $javaHome = $found.FullName
         Write-Success "JAVA_HOME set to $($found.FullName)"
         break
     }
+}
+if (-not $javaHome) {
+    Write-Info "JAVA_HOME could not be set automatically. You may need to set it manually after restart."
 }
 
 # ============================================
@@ -176,20 +182,46 @@ else {
 }
 
 # ============================================
-# STEP 4: Install Python
+# STEP 4: Install Python (User Choice: Latest or 3.8)
 # ============================================
-Write-Header "Step 4: Installing Python 3.12"
+Write-Header "Step 4: Installing Python"
 
 # Check for real Python (not Windows Store alias)
 $pythonExe = Get-Command python -ErrorAction SilentlyContinue | Where-Object { $_.Source -notlike "*WindowsApps*" }
 if (!$pythonExe) {
-    Write-Info "Installing Python 3.12..."
-    choco install python --version=3.12.0 -y
-    if ($LASTEXITCODE -ne 0) {
-        Write-Info "Trying alternative python package..."
-        choco install python3 -y
+    # Prompt user for Python version choice
+    Write-Host ""
+    Write-Host "Please choose which Python version to install:" -ForegroundColor Cyan
+    Write-Host "  [1] Latest Python (Recommended)" -ForegroundColor White
+    Write-Host "  [2] Python 3.8 (For compatibility)" -ForegroundColor White
+    Write-Host ""
+    
+    $pythonChoice = $null
+    while ($pythonChoice -notmatch '^[12]$') {
+        $pythonChoice = Read-Host "Enter your choice (1 or 2)"
+        if ($pythonChoice -notmatch '^[12]$') {
+            Write-Host "Invalid choice. Please enter 1 or 2." -ForegroundColor Red
+        }
     }
-    Write-Success "Python installed!"
+    
+    if ($pythonChoice -eq "1") {
+        Write-Info "Installing Latest Python..."
+        choco install python -y
+        if ($LASTEXITCODE -ne 0) {
+            Write-Info "Trying alternative python package..."
+            choco install python3 -y
+        }
+        Write-Success "Latest Python installed!"
+    }
+    else {
+        Write-Info "Installing Python 3.8..."
+        choco install python --version=3.8.10 -y
+        if ($LASTEXITCODE -ne 0) {
+            Write-Info "Trying alternative python38 package..."
+            choco install python38 -y
+        }
+        Write-Success "Python 3.8 installed!"
+    }
 }
 else {
     Write-Success "Python is already installed: $($pythonExe.Source)"
@@ -201,13 +233,18 @@ $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";
 # Install pip packages - with error handling
 Write-Info "Installing Python packages (mysql-connector-python, pymysql)..."
 try {
-    # Find real python executable
+    # Find real python executable - check common paths for various versions
     $pythonPaths = @(
+        "C:\Python313\python.exe",
         "C:\Python312\python.exe",
         "C:\Python311\python.exe",
         "C:\Python310\python.exe",
+        "C:\Python39\python.exe",
+        "C:\Python38\python.exe",
+        "C:\Program Files\Python313\python.exe",
         "C:\Program Files\Python312\python.exe",
-        "C:\Program Files\Python311\python.exe"
+        "C:\Program Files\Python311\python.exe",
+        "C:\Program Files\Python38\python.exe"
     )
     $realPython = $pythonPaths | Where-Object { Test-Path $_ } | Select-Object -First 1
     
@@ -229,20 +266,65 @@ catch {
 # ============================================
 Write-Header "Step 5: Installing MySQL Server"
 
-$mysqlCheck = Get-Command mysql -ErrorAction SilentlyContinue
-if (!$mysqlCheck) {
-    Write-Info "Installing MySQL Server..."
-    choco install mysql -y
-    Write-Success "MySQL Server installed!"
+# Check for MySQL Server (mysqld), not just the client (mysql)
+$mysqldPath = "C:\tools\mysql\current\bin\mysqld.exe"
+$mysqlCheck = Get-Command mysqld -ErrorAction SilentlyContinue
+
+# Also check the typical installation path
+$hasServer = (Test-Path $mysqldPath) -or $mysqlCheck
+
+if (!$hasServer) {
+    Write-Info "MySQL Server not found. Installing full MySQL Server..."
+    
+    # Force install to ensure we get the full server, not just the client
+    choco install mysql -y --force
+    
+    if ($LASTEXITCODE -eq 0) {
+        Write-Success "MySQL Server installed!"
+    }
+    else {
+        Write-Info "Chocolatey install returned exit code: $LASTEXITCODE"
+        Write-Info "Checking if MySQL was installed anyway..."
+    }
+    
+    # Verify server was installed
+    if (!(Test-Path $mysqldPath)) {
+        Write-Info "MySQL Server executable not found at expected location."
+        Write-Info "The package may have installed to a different location."
+    }
 }
 else {
-    Write-Success "MySQL is already installed."
+    if ($mysqlCheck) {
+        Write-Success "MySQL Server is already installed: $($mysqlCheck.Source)"
+    }
+    else {
+        Write-Success "MySQL Server is already installed at: $mysqldPath"
+    }
 }
 
-# Install MySQL Workbench
-Write-Info "Installing MySQL Workbench..."
-choco install mysql.workbench -y
-Write-Success "MySQL Workbench installed!"
+# Ask about MySQL Workbench (optional GUI tool)
+Write-Host ""
+Write-Host "MySQL Workbench is an optional GUI tool for managing MySQL databases." -ForegroundColor Cyan
+Write-Host "  [Y] Yes, install MySQL Workbench (recommended for beginners)" -ForegroundColor White
+Write-Host "  [N] No, skip - I'll use command line only" -ForegroundColor White
+Write-Host ""
+
+$installWorkbench = $null
+while ($installWorkbench -notmatch '^[YyNn]$') {
+    $installWorkbench = Read-Host "Install MySQL Workbench? (Y/N)"
+    if ($installWorkbench -notmatch '^[YyNn]$') {
+        Write-Host "Invalid choice. Please enter Y or N." -ForegroundColor Red
+    }
+}
+
+if ($installWorkbench -match '^[Yy]$') {
+    Write-Info "Installing MySQL Workbench..."
+    choco install mysql.workbench -y
+    Write-Success "MySQL Workbench installed!"
+}
+else {
+    Write-Info "Skipping MySQL Workbench installation."
+}
 
 # ============================================
 # STEP 6: Install MySQL Connector/J (Java)
@@ -255,16 +337,14 @@ if (!(Test-Path $connectorJPath)) {
 }
 
 # Download MySQL Connector/J
-$connectorJUrl = "https://dev.mysql.com/get/Downloads/Connector-J/mysql-connector-j-8.3.0.zip"
-$connectorJZip = "$connectorJPath\mysql-connector-j.zip"
+$connectorJUrl = "https://repo1.maven.org/maven2/com/mysql/mysql-connector-j/8.3.0/mysql-connector-j-8.3.0.jar"
+$connectorJJar = "$connectorJPath\mysql-connector-j-8.3.0.jar"
 
-if (!(Test-Path "$connectorJPath\mysql-connector-j-8.3.0\mysql-connector-j-8.3.0.jar")) {
+if (!(Test-Path $connectorJJar)) {
     Write-Info "Downloading MySQL Connector/J..."
     try {
-        Invoke-WebRequest -Uri $connectorJUrl -OutFile $connectorJZip -UseBasicParsing
-        Expand-Archive -Path $connectorJZip -DestinationPath $connectorJPath -Force
-        Remove-Item $connectorJZip -Force
-        Write-Success "MySQL Connector/J downloaded and extracted!"
+        Invoke-WebRequest -Uri $connectorJUrl -OutFile $connectorJJar -UseBasicParsing
+        Write-Success "MySQL Connector/J downloaded successfully!"
     }
     catch {
         Write-Info "Using alternative: Installing via Chocolatey..."
@@ -286,12 +366,16 @@ if (!(Test-Path $connectorCPath)) {
 }
 
 # MySQL Connector/C is included with MySQL Server
-# We'll set up the paths
+# We'll set up the paths - check multiple possible locations
 $mysqlPath = "C:\tools\mysql\current"
-if (Test-Path $mysqlPath) {
-    $includePath = "$mysqlPath\include"
-    $libPath = "$mysqlPath\lib"
-    
+$includePath = "$mysqlPath\include"
+$libPath = "$mysqlPath\lib"
+
+# Check if include/lib directories exist
+$hasInclude = Test-Path $includePath
+$hasLib = Test-Path $libPath
+
+if ($hasInclude -and $hasLib) {
     # Set environment variables for C/C++ compilation
     [System.Environment]::SetEnvironmentVariable("MYSQL_INCLUDE", $includePath, "Machine")
     [System.Environment]::SetEnvironmentVariable("MYSQL_LIB", $libPath, "Machine")
@@ -303,7 +387,21 @@ if (Test-Path $mysqlPath) {
     Write-Info "MYSQL_LIB: $libPath"
 }
 else {
-    Write-Info "MySQL path not found at default location. Will need manual configuration."
+    # The Chocolatey MySQL package may not include development headers
+    # Point to alternative paths or inform user
+    Write-Info "MySQL development headers not found in standard location."
+    Write-Info "This is normal for the minimal MySQL installation."
+    
+    # Set placeholder paths - sample code uses socket-based connection which works without headers
+    [System.Environment]::SetEnvironmentVariable("MYSQL_INCLUDE", $includePath, "Machine")
+    [System.Environment]::SetEnvironmentVariable("MYSQL_LIB", $libPath, "Machine")
+    $env:MYSQL_INCLUDE = $includePath
+    $env:MYSQL_LIB = $libPath
+    
+    Write-Info "For C/C++ MySQL development with native API, you may need to:"
+    Write-Info "  1. Download MySQL Connector/C from: https://dev.mysql.com/downloads/connector/c/"
+    Write-Info "  2. Or use the included Python/Java connectors instead"
+    Write-Success "MySQL C/C++ environment variables set (paths may be created later)."
 }
 
 # ============================================
@@ -311,17 +409,119 @@ else {
 # ============================================
 Write-Header "Step 8: Configuring MySQL Service"
 
-# Check if MySQL service exists and start it
+# Find MySQL installation path
+$mysqlBasePath = "C:\tools\mysql\current"
+$mysqlBin = "$mysqlBasePath\bin"
+$mysqldExe = "$mysqlBin\mysqld.exe"
+$mysqlDataPath = "$mysqlBasePath\data"
+
+# Check if MySQL service exists
 $mysqlService = Get-Service -Name "MySQL*" -ErrorAction SilentlyContinue
+
 if ($mysqlService) {
+    # Service exists, make sure it's running
     if ($mysqlService.Status -ne "Running") {
         Write-Info "Starting MySQL service..."
-        Start-Service $mysqlService.Name
+        try {
+            Start-Service $mysqlService.Name -ErrorAction Stop
+            Write-Success "MySQL service started!"
+        }
+        catch {
+            Write-Info "Could not start MySQL service: $_"
+        }
     }
-    Write-Success "MySQL service is running!"
+    else {
+        Write-Success "MySQL service is already running!"
+    }
+}
+elseif (Test-Path $mysqldExe) {
+    # MySQL is installed but service doesn't exist - need to initialize and install
+    Write-Info "MySQL executable found but no service configured. Initializing MySQL..."
+    
+    # Step 1: Initialize MySQL data directory if it doesn't exist
+    if (!(Test-Path $mysqlDataPath)) {
+        Write-Info "Creating MySQL data directory..."
+        New-Item -ItemType Directory -Path $mysqlDataPath -Force | Out-Null
+        
+        Write-Info "Initializing MySQL database with --initialize-insecure..."
+        try {
+            # Initialize MySQL with no root password for easy setup
+            $initProcess = Start-Process -FilePath $mysqldExe -ArgumentList "--initialize-insecure", "--basedir=`"$mysqlBasePath`"", "--datadir=`"$mysqlDataPath`"" -Wait -PassThru -NoNewWindow
+            if ($initProcess.ExitCode -eq 0) {
+                Write-Success "MySQL data directory initialized!"
+            }
+            else {
+                Write-Info "MySQL initialization returned exit code: $($initProcess.ExitCode)"
+            }
+        }
+        catch {
+            Write-Info "MySQL initialization error: $_"
+        }
+    }
+    else {
+        Write-Success "MySQL data directory already exists."
+    }
+    
+    # Step 2: Install MySQL as a Windows service
+    Write-Info "Installing MySQL as a Windows service..."
+    try {
+        $serviceProcess = Start-Process -FilePath $mysqldExe -ArgumentList "--install", "MySQL", "--defaults-file=`"$mysqlBasePath\my.ini`"" -Wait -PassThru -NoNewWindow -ErrorAction SilentlyContinue 2>$null
+        
+        # Also try without defaults-file in case my.ini doesn't exist
+        if (!$serviceProcess -or $serviceProcess.ExitCode -ne 0) {
+            $serviceProcess = Start-Process -FilePath $mysqldExe -ArgumentList "--install", "MySQL" -Wait -PassThru -NoNewWindow
+        }
+        
+        if ($serviceProcess.ExitCode -eq 0) {
+            Write-Success "MySQL service installed!"
+        }
+        else {
+            Write-Info "MySQL service installation returned exit code: $($serviceProcess.ExitCode)"
+        }
+    }
+    catch {
+        Write-Info "MySQL service may already be installed or failed to install: $_"
+    }
+    
+    # Step 3: Start the MySQL service
+    Start-Sleep -Seconds 2  # Give Windows time to register the service
+    $mysqlService = Get-Service -Name "MySQL*" -ErrorAction SilentlyContinue
+    if ($mysqlService) {
+        Write-Info "Starting MySQL service..."
+        try {
+            Start-Service $mysqlService.Name -ErrorAction Stop
+            Start-Sleep -Seconds 3  # Wait for MySQL to fully start
+            Write-Success "MySQL service is now running!"
+        }
+        catch {
+            Write-Info "Could not start MySQL service: $_"
+            Write-Info "You may need to start it manually after reboot."
+        }
+    }
+    else {
+        # Service installation might have failed, try running mysqld directly
+        Write-Info "Service not registered. Attempting to start MySQL directly..."
+        try {
+            Start-Process -FilePath $mysqldExe -ArgumentList "--console" -NoNewWindow
+            Start-Sleep -Seconds 5
+            
+            # Check if mysqld is running
+            $mysqldProcess = Get-Process mysqld -ErrorAction SilentlyContinue
+            if ($mysqldProcess) {
+                Write-Success "MySQL server is running (process mode)!"
+            }
+            else {
+                Write-Info "Could not verify MySQL process. Please start MySQL manually after reboot."
+            }
+        }
+        catch {
+            Write-Info "Could not start MySQL directly: $_"
+        }
+    }
 }
 else {
-    Write-Info "MySQL service not found. You may need to initialize MySQL manually."
+    Write-Info "MySQL executable not found. Please ensure MySQL is properly installed."
+    Write-Info "You can reinstall MySQL using: choco install mysql -y --force"
 }
 
 # ============================================
@@ -387,19 +587,58 @@ $sqlSetup = @"
 CREATE DATABASE IF NOT EXISTS testdb;
 USE testdb;
 
--- Create test table
+-- Drop tables if they exist to ensure clean state
+DROP TABLE IF EXISTS orders;
+DROP TABLE IF EXISTS products;
+DROP TABLE IF EXISTS users;
+
+-- Create users table
 CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
-    email VARCHAR(100) NOT NULL,
+    email VARCHAR(100) NOT NULL UNIQUE,
+    age INT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Insert sample data
-INSERT INTO users (name, email) VALUES 
-    ('John Doe', 'john@example.com'),
-    ('Jane Smith', 'jane@example.com'),
-    ('Bob Wilson', 'bob@example.com');
+-- Create products table
+CREATE TABLE IF NOT EXISTS products (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    price DECIMAL(10, 2) NOT NULL,
+    quantity INT DEFAULT 0
+);
+
+-- Create orders table
+CREATE TABLE IF NOT EXISTS orders (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT,
+    product_id INT,
+    quantity INT NOT NULL,
+    total_price DECIMAL(10, 2) NOT NULL,
+    status VARCHAR(20) DEFAULT 'pending',
+    order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (product_id) REFERENCES products(id)
+);
+
+-- Insert sample users
+INSERT INTO users (name, email, age) VALUES 
+    ('John Doe', 'john@example.com', 25),
+    ('Jane Smith', 'jane@example.com', 30),
+    ('Bob Wilson', 'bob@example.com', 45);
+
+-- Insert sample products
+INSERT INTO products (name, price, quantity) VALUES 
+    ('Laptop', 999.99, 10),
+    ('Mouse', 19.99, 50),
+    ('Keyboard', 49.99, 30);
+
+-- Insert sample orders
+INSERT INTO orders (user_id, product_id, quantity, total_price, status) VALUES 
+    (1, 1, 1, 999.99, 'delivered'),
+    (2, 2, 2, 39.98, 'shipped'),
+    (3, 3, 1, 49.99, 'processing');
 
 -- Create test user for applications
 CREATE USER IF NOT EXISTS 'testuser'@'localhost' IDENTIFIED BY 'testpass123';
@@ -409,9 +648,67 @@ FLUSH PRIVILEGES;
 SELECT 'Database setup completed successfully!' AS status;
 "@
 
-$sqlSetup | Out-File -FilePath "$ProjectRoot\database\setup-database.sql" -Encoding UTF8
+$sqlSetup | Out-File -FilePath "$ProjectRoot\database\setup-database.sql" -Encoding ASCII -NoNewline
 Write-Success "Database setup script created!"
-Write-Info "Run the database\setup-database.sql script in MySQL to create the test database."
+
+# Automatically initialize database
+Write-Info "Attempting to initialize MySQL database..."
+if ($mysqlCheck) {
+    try {
+        # Try to run the setup script
+        Get-Content "$ProjectRoot\database\setup-database.sql" | & mysql -u root 2>$null
+        if ($LASTEXITCODE -eq 0) {
+            Write-Success "Database initialized successfully!"
+        }
+        else {
+            Write-Info "Note: Database initialization may require manual password entry later."
+        }
+    }
+    catch {
+        Write-Info "Could not automatically initialize database. Please run option 3 in start.bat."
+    }
+}
+
+# ============================================
+# STEP 12: Install d1run Globally
+# ============================================
+Write-Header "Step 12: Installing d1run Globally"
+
+Write-Info "Installing d1run universal code runner globally..."
+$d1runInstaller = Join-Path $PSScriptRoot "install-d1run-global.ps1"
+if (Test-Path $d1runInstaller) {
+    try {
+        & $d1runInstaller
+        Write-Success "d1run installed globally! You can now run 'd1run program.cpp' from any terminal."
+    }
+    catch {
+        Write-Info "d1run installation encountered an issue: $_"
+        Write-Info "You can manually install it later using Option 2 in start.bat"
+    }
+}
+else {
+    Write-Info "d1run installer not found. Skipping global installation."
+}
+
+# ============================================
+# STEP 13: Verify Installation
+# ============================================
+Write-Header "Step 13: Verifying Installation"
+
+Write-Info "Running verification checks..."
+$verifyScript = Join-Path $PSScriptRoot "verify-installation.ps1"
+if (Test-Path $verifyScript) {
+    try {
+        & powershell -ExecutionPolicy Bypass -File $verifyScript
+        Write-Success "Verification completed!"
+    }
+    catch {
+        Write-Info "Verification encountered an issue: $_"
+    }
+}
+else {
+    Write-Info "Verification script not found. Skipping."
+}
 
 # ============================================
 # FINAL: Summary and Next Steps
@@ -421,30 +718,37 @@ Write-Header "Installation Complete!"
 Write-Host ""
 Write-Host "Installed Components:" -ForegroundColor Green
 Write-Host "  [*] Chocolatey Package Manager" -ForegroundColor White
-Write-Host "  [*] Java Development Kit (JDK 21)" -ForegroundColor White
+Write-Host "  [*] Java Development Kit (Latest OpenJDK)" -ForegroundColor White
 Write-Host "  [*] MinGW-w64 (GCC/G++ Compiler)" -ForegroundColor White
-Write-Host "  [*] Python 3.12" -ForegroundColor White
+Write-Host "  [*] Python (User Selected Version)" -ForegroundColor White
 Write-Host "  [*] MySQL Server" -ForegroundColor White
-Write-Host "  [*] MySQL Workbench" -ForegroundColor White
+Write-Host "  [*] MySQL Workbench (if selected)" -ForegroundColor White
 Write-Host "  [*] MySQL Connectors (Java, Python)" -ForegroundColor White
 Write-Host "  [*] Git" -ForegroundColor White
 Write-Host "  [*] Visual Studio Code" -ForegroundColor White
+Write-Host "  [*] d1run - Universal Code Runner (GLOBAL)" -ForegroundColor White
 Write-Host ""
 
-Write-Host "Next Steps:" -ForegroundColor Yellow
-Write-Host "  1. RESTART YOUR TERMINAL/COMPUTER to apply PATH changes" -ForegroundColor White
-Write-Host "  2. Initialize MySQL:" -ForegroundColor White
-Write-Host "     mysqld --initialize-insecure" -ForegroundColor Cyan
-Write-Host "     mysqld --install" -ForegroundColor Cyan
-Write-Host "     net start mysql" -ForegroundColor Cyan
-Write-Host "  3. Set MySQL root password:" -ForegroundColor White
-Write-Host "     mysql -u root" -ForegroundColor Cyan
-Write-Host "     ALTER USER 'root'@'localhost' IDENTIFIED BY 'your_password';" -ForegroundColor Cyan
-Write-Host "  4. Run the test database setup:" -ForegroundColor White
-Write-Host "     mysql -u root -p < database\setup-database.sql" -ForegroundColor Cyan
-Write-Host "  5. Run the verification script:" -ForegroundColor White
-Write-Host "     .\VERIFY.bat" -ForegroundColor Cyan
-Write-Host "  6. Run sample programs to test each language" -ForegroundColor White
+Write-Host "d1run Usage:" -ForegroundColor Green
+Write-Host "  After restart, you can run code from ANY terminal:" -ForegroundColor White
+Write-Host "    d1run hello.py           # Run Python" -ForegroundColor Gray
+Write-Host "    d1run MyProgram.java     # Compile and run Java" -ForegroundColor Gray
+Write-Host "    d1run program.cpp        # Compile and run C++" -ForegroundColor Gray
+Write-Host "    d1run test.c             # Compile and run C" -ForegroundColor Gray
+Write-Host "    d1run query.sql          # Execute SQL in MySQL" -ForegroundColor Gray
+Write-Host ""
+
+Write-Host "Database Credentials:" -ForegroundColor Green
+Write-Host "  - Root User: root (No Password)" -ForegroundColor White
+Write-Host "  - App User:  testuser" -ForegroundColor White
+Write-Host "  - Password:  testpass123" -ForegroundColor White
+Write-Host "  - Database:  testdb" -ForegroundColor White
+Write-Host ""
+
+Write-Host "IMPORTANT:" -ForegroundColor Yellow
+Write-Host "  - RESTART your computer to apply all PATH changes" -ForegroundColor White
+Write-Host "  - After restart, 'd1run' command will work from ANY new terminal" -ForegroundColor White
+Write-Host "  - All tools (java, python, gcc, g++, mysql) will be available globally" -ForegroundColor White
 Write-Host ""
 
 Write-Host "Log file saved to: $LogFile" -ForegroundColor Gray

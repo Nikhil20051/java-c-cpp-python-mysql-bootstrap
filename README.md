@@ -34,12 +34,34 @@ d1run script.js      # Runs Node.js
 
 The **`start.bat`** file in the root folder is your main control center. Double-click it to see this menu:
 
-1.  **Install Complete Environment**: Installs Java, GCC (C), G++ (C++), Python, MySQL, and VS Code.
-2.  **Install 'd1run' Globally**: Makes the `d1run` command work in any folder.
-3.  **Setup Database**: Creates a sample MySQL database (`testdb`) with data.
-4.  **Verify Installation**: Checks if everything is installed correctly.
-5.  **Run Tests**: Runs sample programs in all languages to ensure they work.
-6.  **Uninstall Everything**: Removes all tools installed by this project.
+1.  **FULL INSTALL** ⭐: Installs EVERYTHING in one step:
+    - Java, GCC (C), G++ (C++), Python, MySQL Server, Git, VS Code
+    - `d1run` universal code runner (installed globally)
+    - MySQL Workbench (optional - you'll be asked)
+    - **Automatically checks for updates before installing!**
+    - **After install, just restart and code!**
+2.  **Check for Updates** 🔄: Downloads the latest version from GitHub (no Git required!).
+3.  **Install 'd1run' Globally Only**: Makes the `d1run` command work in any folder (if already have tools installed).
+4.  **Setup Database**: Creates a sample MySQL database (`testdb`) with data.
+5.  **Verify Installation**: Checks if everything is installed correctly.
+6.  **Run Tests**: Runs sample programs in all languages to ensure they work.
+7.  **Uninstall Everything**: Removes all tools installed by this project.
+8.  **Uninstall 'd1run' Only**: Removes just the global `d1run` command.
+
+---
+
+## 🔄 Auto-Update Feature
+
+This project includes a built-in auto-update mechanism that works **without Git**:
+
+- **Automatic Check**: When you select Option 1, it automatically checks if there's a newer version available.
+- **Manual Check**: Use Option 2 to check for and install updates manually.
+- **No Git Required**: Updates are downloaded directly from GitHub using HTTP - no need to install Git!
+- **Backup First**: Before updating, your existing files are backed up in case you need to rollback.
+- **User Confirmation**: You're always asked before downloading updates.
+
+To check for updates at any time, just run `start.bat` and select Option 2.
+
 
 ---
 

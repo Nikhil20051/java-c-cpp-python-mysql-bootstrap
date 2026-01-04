@@ -31,3 +31,6 @@ logs/
 # Testing
 *.wsb
 TEST_SANDBOX.bat
+
+# Auto-update backups
+.update-backup/

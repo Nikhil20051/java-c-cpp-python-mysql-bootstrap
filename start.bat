@@ -11,30 +11,71 @@ title Universal Boostrap - dmj.one
 :MENU
 cls
 echo ========================================================
-echo   UNIVERSAL CODE RUNNER & DEV ENVIRONMENT - SETUP
+echo   UNIVERSAL CODE RUNNER ^& DEV ENVIRONMENT - SETUP
 echo ========================================================
 echo.
-echo   1. Install Complete Environment (Java, C, C++, Python, MySQL)
-echo   2. Install 'd1run' Globally (Run code from anywhere)
-echo   3. Setup Database (Initialize MySQL Schema)
-echo   4. Verify Installation (Check all components)
-echo   5. Run Tests (Validate languages with samples)
-echo   6. Uninstall Everything
-echo   7. Uninstall 'd1run' Only
-echo   8. Exit
+echo   1. FULL INSTALL (Recommended - Installs Everything + d1run)
+echo      [Java, C, C++, Python, MySQL, Git, VS Code + d1run global]
+echo      [Auto-checks for updates before installation]
+echo.
+echo   2. Check for Updates (Download latest version)
+echo   3. Install 'd1run' Globally Only
+echo   4. Setup Database (Initialize MySQL Schema)
+echo   5. Verify Installation (Check all components)
+echo   6. Run Tests (Validate languages with samples)
+echo   7. Uninstall Everything
+echo   8. Uninstall 'd1run' Only
+echo   9. Exit
+echo.
+echo   NOTE: After Option 1, restart your PC. Then 'd1run file.cpp'
+echo         will work from ANY new terminal!
 echo.
 echo ========================================================
+:MENU_LOOP
 set "choice="
-set /p choice="Select an option (1-8): "
+set /p "choice=Select an option (1-9): "
 
-if "%choice%"=="1" goto INSTALL_ENV
-if "%choice%"=="2" goto INSTALL_GLOBAL
-if "%choice%"=="3" goto SETUP_DB
-if "%choice%"=="4" goto VERIFY
-if "%choice%"=="5" goto TEST
-if "%choice%"=="6" goto UNINSTALL_ALL
-if "%choice%"=="7" goto UNINSTALL_GLOBAL
-if "%choice%"=="8" goto EXIT
+if not defined choice goto MENU
+if "%choice%"=="1" goto CHECK_UPDATE_THEN_INSTALL
+if "%choice%"=="2" goto CHECK_UPDATE
+if "%choice%"=="3" goto INSTALL_GLOBAL
+if "%choice%"=="4" goto SETUP_DB
+if "%choice%"=="5" goto VERIFY
+if "%choice%"=="6" goto TEST
+if "%choice%"=="7" goto UNINSTALL_ALL
+if "%choice%"=="8" goto UNINSTALL_GLOBAL
+if "%choice%"=="9" goto EXIT
+
+echo.
+echo   [ERROR] Invalid selection: %choice%
+echo   Please enter a number between 1 and 9.
+echo.
+pause
+goto MENU
+
+:CHECK_UPDATE_THEN_INSTALL
+cls
+echo ========================================================
+echo   CHECKING FOR UPDATES
+echo ========================================================
+echo.
+echo   [INFO] Checking if a newer version is available...
+echo.
+powershell -ExecutionPolicy Bypass -File "%~dp0scripts\check-update.ps1"
+echo.
+echo   [INFO] Proceeding with installation...
+echo.
+goto INSTALL_ENV
+
+:CHECK_UPDATE
+cls
+echo ========================================================
+echo   SOFTWARE UPDATE
+echo ========================================================
+echo.
+powershell -ExecutionPolicy Bypass -File "%~dp0scripts\check-update.ps1"
+echo.
+pause
 goto MENU
 
 :INSTALL_ENV
@@ -53,20 +94,132 @@ goto MENU
 
 :SETUP_DB
 cls
-echo [INFO] Setting up Database...
-echo Attempting to connect to MySQL to run database\setup-database.sql...
+echo ========================================================
+echo   DATABASE SETUP ^& CREDENTIALS
+echo ========================================================
+echo.
+echo   [INFO] Default Credentials:
+echo   - Root User: root (No Password)
+echo   - App User:  testuser (Password: testpass123)
+echo   - Database:  testdb
+echo.
+echo   [INFO] Checking MySQL availability...
+
+REM Check if MySQL is in PATH
+where mysql >nul 2>&1
+if %errorlevel% EQU 0 goto CHECK_SERVICE
+
+REM Try to add MySQL to PATH from known locations
+if exist "C:\tools\mysql\current\bin\mysql.exe" (
+    set "PATH=%PATH%;C:\tools\mysql\current\bin"
+    goto CHECK_SERVICE
+)
+if exist "C:\Program Files\MySQL\MySQL Server 9.2\bin\mysql.exe" (
+    set "PATH=%PATH%;C:\Program Files\MySQL\MySQL Server 9.2\bin"
+    goto CHECK_SERVICE
+)
+
+echo.
+echo   [ERROR] MySQL client (mysql.exe) not found in PATH or default locations.
+echo   Please ensure MySQL is installed (Option 1).
+echo.
+pause
+goto MENU
+
+:CHECK_SERVICE
+echo   [INFO] MySQL client found. Checking if MySQL service is running...
+
+REM Try a simple MySQL connection to see if server is running
+mysql -u root --execute="SELECT 1" >nul 2>&1
+if %errorlevel% EQU 0 goto START_SETUP
+
+echo.
+echo   [WARN] MySQL server is not responding.
+echo   [INFO] Attempting to start MySQL service...
 echo.
 
-REM Try to connect without password first (default for fresh install)
-mysql -u root -e "source database\setup-database.sql" 2>nul
+REM Try to start MySQL service
+net start MySQL >nul 2>&1
 if %errorlevel% EQU 0 (
-    echo [SUCCESS] Database set up successfully!
+    echo   [SUCCESS] MySQL service started!
+    timeout /t 3 /nobreak >nul
+    goto START_SETUP
+)
+
+REM If service doesn't exist, try to initialize and start MySQL
+if exist "C:\tools\mysql\current\bin\mysqld.exe" (
+    echo   [INFO] MySQL service not found. Initializing MySQL...
+    
+    REM Check if data directory exists
+    if not exist "C:\tools\mysql\current\data" (
+        echo   [INFO] Creating data directory and initializing MySQL...
+        mkdir "C:\tools\mysql\current\data" 2>nul
+        "C:\tools\mysql\current\bin\mysqld.exe" --initialize-insecure --basedir="C:\tools\mysql\current" --datadir="C:\tools\mysql\current\data"
+        
+        echo   [INFO] Installing MySQL as service...
+        "C:\tools\mysql\current\bin\mysqld.exe" --install MySQL
+        
+        echo   [INFO] Starting MySQL service...
+        net start MySQL
+        timeout /t 5 /nobreak >nul
+        
+        REM Verify it works
+        mysql -u root --execute="SELECT 1" >nul 2>&1
+        if %errorlevel% EQU 0 (
+            echo   [SUCCESS] MySQL initialized and started successfully!
+            goto START_SETUP
+        )
+    )
+) else (
+    REM mysqld.exe not found - MySQL Server is not installed (only client)
+    echo.
+    echo   [ERROR] MySQL Server ^(mysqld.exe^) not found.
+    echo.
+    echo   [INFO] Only the MySQL client is installed, not the full server.
+    echo   [INFO] Please run Option 1 to install the complete environment,
+    echo          which will install MySQL Server with the full components.
+    echo.
     pause
     goto MENU
 )
 
-echo [INFO] Password required.
-mysql -u root -p -e "source database\setup-database.sql"
+REM If we got here, something went wrong with initialization
+echo.
+echo   [ERROR] Could not initialize or start MySQL server.
+echo   [INFO] Please run Option 1 to fully reinstall the environment.
+echo.
+pause
+goto MENU
+
+:START_SETUP
+echo   [INFO] Attempting automated setup...
+echo.
+
+REM Try to connect without password first
+call mysql -u root --execute="source database\setup-database.sql" 2>nul
+if %errorlevel% EQU 0 (
+    echo.
+    echo   [SUCCESS] Database setup completed successfully!
+    echo   [INFO] testuser 'testuser' with password 'testpass123' is ready.
+    echo.
+    pause
+    goto MENU
+)
+
+echo   [WARN] Automated setup failed without password. 
+echo   [INFO] If you have set a root password, please enter it below.
+echo.
+call mysql -u root -p --execute="source database\setup-database.sql"
+if %errorlevel% EQU 0 (
+    echo.
+    echo   [SUCCESS] Database setup completed successfully!
+    echo.
+) else (
+    echo.
+    echo   [ERROR] Database setup failed (Error Level: %errorlevel%). 
+    echo   Please ensure MySQL is running (Option 4 to check).
+    echo.
+)
 pause
 goto MENU
 

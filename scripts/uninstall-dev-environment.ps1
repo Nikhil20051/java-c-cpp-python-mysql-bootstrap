@@ -42,7 +42,7 @@
 param(
     [switch]$All,
     [switch]$KeepData,
-    [ValidateSet("java", "mingw", "python", "mysql", "git", "vscode", "envvars", "connectors", "all")]
+    [ValidateSet("java", "mingw", "python", "mysql", "git", "vscode", "envvars", "connectors", "d1run", "all")]
     [string]$Component = ""
 )
 
@@ -104,6 +104,87 @@ function Confirm-Action($message) {
     return ($response -eq 'Y' -or $response -eq 'y' -or $response -eq 'yes')
 }
 
+# Safe function to remove ONLY specific paths from system PATH
+# This is critical to prevent system corruption
+function Remove-FromSystemPath {
+    param(
+        [string[]]$PathsToRemove
+    )
+    
+    $currentPath = [System.Environment]::GetEnvironmentVariable("Path", "Machine")
+    if ([string]::IsNullOrWhiteSpace($currentPath)) {
+        Write-Warn "System PATH is empty or could not be read. Skipping PATH cleanup."
+        return
+    }
+    
+    # Backup the current PATH before any modifications
+    $backupFile = "$ProjectRoot\logs\path-backup-$(Get-Date -Format 'yyyyMMdd-HHmmss').txt"
+    if (!(Test-Path "$ProjectRoot\logs")) {
+        New-Item -ItemType Directory -Path "$ProjectRoot\logs" -Force | Out-Null
+    }
+    $currentPath | Out-File -FilePath $backupFile -Encoding UTF8
+    Write-Info "PATH backup saved to: $backupFile"
+    
+    $parts = $currentPath -split ";"
+    $newParts = @()
+    $removedCount = 0
+    
+    foreach ($part in $parts) {
+        $partTrimmed = $part.Trim()
+        if ([string]::IsNullOrWhiteSpace($partTrimmed)) {
+            continue  # Skip empty entries
+        }
+        
+        $shouldRemove = $false
+        foreach ($pathToRemove in $PathsToRemove) {
+            if ($partTrimmed.ToLower() -eq $pathToRemove.ToLower()) {
+                $shouldRemove = $true
+                Write-Info "Removing from PATH: $partTrimmed"
+                $removedCount++
+                break
+            }
+        }
+        
+        if (-not $shouldRemove) {
+            $newParts += $partTrimmed
+        }
+    }
+    
+    if ($removedCount -gt 0) {
+        # Validate the new PATH before saving
+        $newPath = $newParts -join ";"
+        
+        # Safety check: ensure we're not leaving an empty or too-short PATH
+        if ($newPath.Length -lt 50) {
+            Write-Err "SAFETY CHECK FAILED: New PATH would be too short. Aborting PATH modification."
+            Write-Warn "PATH was NOT modified. Please clean up manually if needed."
+            return
+        }
+        
+        # Safety check: ensure critical Windows paths are still there
+        $criticalPaths = @("\Windows\system32", "\Windows", "\System32\Wbem")
+        $hasCritical = $false
+        foreach ($critical in $criticalPaths) {
+            if ($newPath -like "*$critical*") {
+                $hasCritical = $true
+                break
+            }
+        }
+        
+        if (-not $hasCritical) {
+            Write-Err "SAFETY CHECK FAILED: Critical Windows paths would be missing. Aborting PATH modification."
+            Write-Warn "PATH was NOT modified. Please clean up manually if needed."
+            return
+        }
+        
+        [System.Environment]::SetEnvironmentVariable("Path", $newPath, "Machine")
+        Write-Success "Removed $removedCount path(s) from system PATH"
+    }
+    else {
+        Write-Skip "No paths to remove from system PATH"
+    }
+}
+
 # ============================================
 # CHOCOLATEY CHECK
 # ============================================
@@ -123,14 +204,16 @@ Write-Host @"
 WARNING: This script will PERMANENTLY REMOVE development tools!
 
 This uninstaller will remove ONLY components installed by this bootstrap:
-  - Java (Eclipse Temurin JDK 21)
+  - Java (OpenJDK / Eclipse Temurin)
   - MinGW-w64 (C/C++ Compiler)
-  - Python 3.12 and its packages
-  - MySQL Server and Workbench
+  - Python (any version installed by this setup) and its packages
+  - MySQL Server and Workbench (if installed)
   - Git
   - Visual Studio Code
+  - d1run (Universal Code Runner)
   - Environment variables set by this installer
   - Downloaded MySQL connectors
+  - PATH entries added by installer
 
 "@ -ForegroundColor Yellow
 
@@ -152,6 +235,7 @@ $uninstallGit = ($Component -eq "" -or $Component -eq "git" -or $Component -eq "
 $uninstallVSCode = ($Component -eq "" -or $Component -eq "vscode" -or $Component -eq "all")
 $uninstallEnvVars = ($Component -eq "" -or $Component -eq "envvars" -or $Component -eq "all")
 $uninstallConnectors = ($Component -eq "" -or $Component -eq "connectors" -or $Component -eq "all")
+$uninstallD1Run = ($Component -eq "" -or $Component -eq "d1run" -or $Component -eq "all")
 
 # ============================================
 # STEP 1: Stop MySQL Service
@@ -252,7 +336,8 @@ if ($uninstallMingw) {
 if ($uninstallPython) {
     if ($All -or (Confirm-Action "Uninstall Python?")) {
         Write-Info "Uninstalling Python..."
-        & choco uninstall python python3 python312 -y 2>$null
+        # Cover all Python versions we might have installed
+        & choco uninstall python python3 python38 python39 python310 python311 python312 python313 -y 2>$null
         Write-Success "Python uninstalled"
     }
     else {
@@ -374,6 +459,64 @@ else {
 }
 
 # ============================================
+# STEP 7: Uninstall d1run (Global Installation)
+# ============================================
+if ($uninstallD1Run) {
+    Write-SubHeader "Step 7: Uninstalling d1run"
+    
+    $d1runPath = "C:\Program Files\d1run"
+    
+    if (Test-Path $d1runPath) {
+        if ($All -or (Confirm-Action "Uninstall d1run (global code runner)?")) {
+            Write-Info "Removing d1run installation..."
+            
+            # Remove d1run from PATH safely
+            Remove-FromSystemPath -PathsToRemove @($d1runPath)
+            
+            # Remove the d1run directory
+            Remove-Item -Path $d1runPath -Recurse -Force -ErrorAction SilentlyContinue
+            Write-Success "d1run uninstalled"
+        }
+        else {
+            Write-Skip "d1run"
+        }
+    }
+    else {
+        Write-Skip "d1run not installed at $d1runPath"
+    }
+}
+
+# ============================================
+# STEP 8: Clean Known PATH Entries (SAFE)
+# ============================================
+Write-SubHeader "Step 8: Cleaning PATH Entries (Added by Installer)"
+
+# ONLY remove paths that we know were added by this installer
+# This is a whitelist approach - we will NEVER touch unknown paths
+$knownPathsToRemove = @()
+
+if ($uninstallMingw) {
+    $knownPathsToRemove += @(
+        "C:\ProgramData\mingw64\mingw64\bin",
+        "C:\ProgramData\chocolatey\lib\mingw\tools\install\mingw64\bin"
+    )
+}
+
+if ($uninstallD1Run) {
+    $knownPathsToRemove += @(
+        "C:\Program Files\d1run"
+    )
+}
+
+# Only attempt removal if we have paths to remove
+if ($knownPathsToRemove.Count -gt 0) {
+    Remove-FromSystemPath -PathsToRemove $knownPathsToRemove
+}
+else {
+    Write-Skip "No installer-added PATH entries to clean"
+}
+
+# ============================================
 # SUMMARY
 # ============================================
 Write-Header "Uninstallation Complete"
@@ -381,15 +524,17 @@ Write-Header "Uninstallation Complete"
 Write-Host @"
 The following components have been processed:
 
-  - Java (Eclipse Temurin)
+  - Java (Eclipse Temurin / OpenJDK)
   - MinGW-w64 (C/C++ Compiler)
-  - Python 3.12 and packages
-  - MySQL Server and Workbench
+  - Python and packages
+  - MySQL Server and Workbench (if installed)
   - Git
   - Visual Studio Code
+  - d1run (Universal Code Runner)
   - Environment variables (JAVA_HOME, MYSQL_INCLUDE, MYSQL_LIB)
   - Downloaded MySQL connectors
   - Installation logs
+  - PATH entries added by installer
 
 "@ -ForegroundColor White
 
@@ -397,6 +542,7 @@ Write-Host "IMPORTANT:" -ForegroundColor Yellow
 Write-Host "  1. Restart your computer to complete the uninstallation" -ForegroundColor White
 Write-Host "  2. Chocolatey itself was NOT removed (it may be used by other software)" -ForegroundColor White
 Write-Host "  3. Any projects you created using these tools are NOT affected" -ForegroundColor White
+Write-Host "  4. System PATH backup was saved to logs folder before any modifications" -ForegroundColor White
 Write-Host ""
 
 if (-not $KeepData) {
@@ -407,7 +553,7 @@ else {
 }
 
 Write-Host ""
-Write-Host "To reinstall, run: .\INSTALL.bat" -ForegroundColor Cyan
+Write-Host "To reinstall, run: start.bat and choose Option 1" -ForegroundColor Cyan
 Write-Host ""
 
 Write-Host "Press any key to exit..." -ForegroundColor Gray

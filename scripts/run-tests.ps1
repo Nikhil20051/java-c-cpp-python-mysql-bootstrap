@@ -37,6 +37,44 @@ param(
 $ErrorActionPreference = "Continue"
 $ScriptRoot = Split-Path -Parent $PSScriptRoot
 
+# ============================================
+# REFRESH ENVIRONMENT VARIABLES
+# ============================================
+# This ensures newly installed tools are found without requiring a terminal restart
+
+# Refresh PATH from registry
+$machinePath = [System.Environment]::GetEnvironmentVariable("Path", "Machine")
+$userPath = [System.Environment]::GetEnvironmentVariable("Path", "User")
+$env:Path = "$machinePath;$userPath"
+
+# Refresh JAVA_HOME
+$javaHome = [System.Environment]::GetEnvironmentVariable("JAVA_HOME", "Machine")
+if ($javaHome) {
+    $env:JAVA_HOME = $javaHome
+    # Add Java bin to PATH if not already there
+    if ($env:Path -notlike "*$javaHome\bin*") {
+        $env:Path = "$javaHome\bin;$env:Path"
+    }
+}
+
+# Add common tool paths that may not be in PATH yet
+$additionalPaths = @(
+    "C:\Python312",
+    "C:\Python312\Scripts",
+    "C:\Python311",
+    "C:\Python311\Scripts",
+    "C:\ProgramData\mingw64\mingw64\bin",
+    "C:\ProgramData\chocolatey\lib\mingw\tools\install\mingw64\bin",
+    "C:\tools\mysql\current\bin",
+    "C:\Program Files\Git\bin"
+)
+
+foreach ($path in $additionalPaths) {
+    if ((Test-Path $path) -and ($env:Path -notlike "*$path*")) {
+        $env:Path = "$env:Path;$path"
+    }
+}
+
 function Write-Header($text) {
     Write-Host ""
     Write-Host ("=" * 60) -ForegroundColor Cyan
@@ -65,7 +103,7 @@ function Test-Java {
         Push-Location $javaDir
         try {
             Write-Host "Compiling BasicTest.java..." -ForegroundColor Yellow
-            javac BasicTest.java 2>&1
+            javac -encoding UTF-8 BasicTest.java 2>&1
             if ($LASTEXITCODE -eq 0) {
                 Write-Host "[OK] Compilation successful!" -ForegroundColor Green
                 Write-Host "`nRunning BasicTest..." -ForegroundColor Yellow
@@ -109,7 +147,7 @@ function Test-Java {
             Push-Location $javaDir
             try {
                 Write-Host "Compiling MySQLTest.java..." -ForegroundColor Yellow
-                javac -cp $classpath MySQLTest.java 2>&1
+                javac -encoding UTF-8 -cp $classpath MySQLTest.java 2>&1
                 if ($LASTEXITCODE -eq 0) {
                     Write-Host "[OK] Compilation successful!" -ForegroundColor Green
                     Write-Host "`nRunning MySQL test..." -ForegroundColor Yellow
@@ -134,6 +172,10 @@ function Test-Python {
     Write-Header "Testing Python"
     
     $pythonDir = "$ScriptRoot\samples\python"
+
+    # --- FIX START: Force Python to use UTF-8 for output ---
+    $env:PYTHONIOENCODING = "utf-8"
+    # --- FIX END ---
     
     if ($Basic) {
         Write-SubHeader "Running Basic Python Test"
@@ -214,8 +256,14 @@ function Test-C {
             
             Push-Location $cDir
             try {
+                # Copy libmysql.dll to the executable directory
+                $dllSource = Join-Path $mysqlLib "libmysql.dll"
+                if (Test-Path $dllSource) {
+                    Copy-Item -Path $dllSource -Destination $cDir -Force
+                }
+
                 Write-Host "Compiling mysql_test.c..." -ForegroundColor Yellow
-                gcc -o mysql_test.exe mysql_test.c -I"$mysqlInclude" -L"$mysqlLib" -lmysqlclient 2>&1
+                gcc -o mysql_test.exe mysql_test.c -I"$mysqlInclude" -L"$mysqlLib" -llibmysql 2>&1
                 if ($LASTEXITCODE -eq 0) {
                     Write-Host "[OK] Compilation successful!" -ForegroundColor Green
                     Write-Host "`nRunning MySQL test..." -ForegroundColor Yellow
@@ -223,7 +271,7 @@ function Test-C {
                 }
                 else {
                     Write-Host "[ERROR] Compilation failed!" -ForegroundColor Red
-                    Write-Host "Note: C MySQL connectivity requires MySQL C library (libmysqlclient)" -ForegroundColor Yellow
+                    Write-Host "Note: linking against libmysql.lib (DLL import lib) failed." -ForegroundColor Yellow
                 }
             }
             finally {
@@ -294,8 +342,14 @@ function Test-Cpp {
             
             Push-Location $cppDir
             try {
+                # Copy libmysql.dll to the executable directory
+                $dllSource = Join-Path $mysqlLib "libmysql.dll"
+                if (Test-Path $dllSource) {
+                    Copy-Item -Path $dllSource -Destination $cppDir -Force
+                }
+
                 Write-Host "Compiling mysql_test.cpp..." -ForegroundColor Yellow
-                g++ -o mysql_test.exe mysql_test.cpp -I"$mysqlInclude" -L"$mysqlLib" -lmysqlclient -std=c++17 2>&1
+                g++ -o mysql_test.exe mysql_test.cpp -I"$mysqlInclude" -L"$mysqlLib" -llibmysql -std=c++17 2>&1
                 if ($LASTEXITCODE -eq 0) {
                     Write-Host "[OK] Compilation successful!" -ForegroundColor Green
                     Write-Host "`nRunning MySQL test..." -ForegroundColor Yellow
@@ -303,7 +357,7 @@ function Test-Cpp {
                 }
                 else {
                     Write-Host "[ERROR] Compilation failed!" -ForegroundColor Red
-                    Write-Host "Note: C++ MySQL connectivity requires MySQL C library (libmysqlclient)" -ForegroundColor Yellow
+                    Write-Host "Note: linking against libmysql.lib (DLL import lib) failed." -ForegroundColor Yellow
                 }
             }
             finally {
