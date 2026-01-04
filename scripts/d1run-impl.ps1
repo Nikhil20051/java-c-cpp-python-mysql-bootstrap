@@ -1100,6 +1100,7 @@ function Show-Help {
     Write-Host ''
     Write-Host 'KEY FEATURES:' -ForegroundColor Magenta
     Write-Host '  * Python: AUTO-CREATE venv + install requirements.txt!'
+    Write-Host '  * Java: AUTO-DETECT Maven/Gradle + Spring Boot projects!'
     Write-Host '  * C/C++: AUTO-INSTALL missing dependencies via vcpkg!'
     Write-Host '  * C/C++ builds are STATIC by default - run on ANY Windows!'
     Write-Host '  * Executables are KEPT in the same folder as source'
@@ -1117,6 +1118,8 @@ function Show-Version {
     Write-Host "Features:" -ForegroundColor Yellow
     Write-Host "  * Python: Auto-create venv + install from requirements.txt"
     Write-Host "  * Python: Auto-install missing modules on ModuleNotFoundError"
+    Write-Host "  * Java: Auto-detect Maven (pom.xml) and Gradle (build.gradle)"
+    Write-Host "  * Java: Spring Boot projects run with spring-boot:run or bootRun"
     Write-Host "  * C/C++: AUTO-INSTALL missing libraries via vcpkg"
     Write-Host "  * C/C++: Release builds by default (static linking)"
     Write-Host "  * Detailed error reports with line numbers"
@@ -1485,82 +1488,345 @@ switch ($FileExt) {
             exit 1
         }
         
-        # Parse the file to find the public class name
-        $content = Get-Content $File.FullName -Raw -ErrorAction SilentlyContinue
-        if (-not $content) {
-            Write-Err "Could not read file: $($File.FullName)"
-            exit 1
+        # Check for build tool configuration files (search up to 10 levels up)
+        # This handles deep package structures like src/main/java/com/example/app
+        $pomPath = $null
+        $gradlePath = $null
+        $gradleKtsPath = $null
+        $projectRoot = $null
+        $buildTool = $null
+        $isSpringBoot = $false
+        
+        $searchDir = $FileDir
+        for ($i = 0; $i -lt 10; $i++) {
+            $testPom = Join-Path $searchDir "pom.xml"
+            $testGradle = Join-Path $searchDir "build.gradle"
+            $testGradleKts = Join-Path $searchDir "build.gradle.kts"
+            
+            if ((Test-Path $testPom) -and -not $pomPath) {
+                $pomPath = $testPom
+                $projectRoot = $searchDir
+            }
+            if ((Test-Path $testGradle) -and -not $gradlePath) {
+                $gradlePath = $testGradle
+                $projectRoot = $searchDir
+            }
+            if ((Test-Path $testGradleKts) -and -not $gradleKtsPath) {
+                $gradleKtsPath = $testGradleKts
+                $projectRoot = $searchDir
+            }
+            
+            $parent = Split-Path -Parent $searchDir
+            if (-not $parent -or $parent -eq $searchDir) { break }
+            $searchDir = $parent
         }
         
-        $classMatch = [regex]::Match($content, 'public\s+class\s+(\w+)')
-        $className = if ($classMatch.Success) { $classMatch.Groups[1].Value } else { $FileBaseName }
-        
-        # Validate class name matches filename
-        if ($className -ne $FileBaseName) {
-            Write-Warn "Class name '$className' does not match filename '$FileBaseName'"
-            Write-Host "  Java requires the public class name to match the filename." -ForegroundColor Yellow
+        # Determine which build tool to use
+        if ($pomPath) {
+            $buildTool = "maven"
+            $buildFile = $pomPath
+            # Check if it's a Spring Boot project
+            $pomContent = Get-Content $pomPath -Raw -ErrorAction SilentlyContinue
+            if ($pomContent -match "spring-boot-starter" -or $pomContent -match "spring-boot-maven-plugin") {
+                $isSpringBoot = $true
+            }
         }
-        
-        Write-Info "Detected class: $className"
-        
-        # Check for MySQL connector if code uses JDBC
-        $classpath = "."
-        if ($content -match "java\.sql\." -or $content -match "jdbc:") {
-            Write-Info "JDBC usage detected, searching for MySQL connector..."
-            $scriptDir = $PSScriptRoot
-            $projectRoot = Split-Path -Parent $scriptDir
-            $connectorPaths = @(
-                "$projectRoot\lib\mysql-connector-j\mysql-connector-j-8.3.0.jar",
-                "$projectRoot\lib\mysql-connector-j\mysql-connector-j-8.3.0\mysql-connector-j-8.3.0.jar"
-            )
-            foreach ($cp in $connectorPaths) {
-                $found = Get-ChildItem -Path $cp -ErrorAction SilentlyContinue | Select-Object -First 1
-                if ($found) {
-                    $classpath = ".;$($found.FullName)"
-                    Write-Info "Found connector: $($found.Name)"
-                    break
-                }
+        elseif ($gradlePath -or $gradleKtsPath) {
+            $buildTool = "gradle"
+            $buildFile = if ($gradlePath) { $gradlePath } else { $gradleKtsPath }
+            # Check if it's a Spring Boot project
+            $gradleContent = Get-Content $buildFile -Raw -ErrorAction SilentlyContinue
+            if ($gradleContent -match "spring-boot" -or $gradleContent -match "org.springframework.boot") {
+                $isSpringBoot = $true
             }
         }
         
-        # Compile
-        Write-Info "Compiling..."
-        Push-Location $FileDir
-        $tempErr = [System.IO.Path]::GetTempFileName()
-        try {
-            & javac -cp $classpath $FileName 2>$tempErr
-            $compileExitCode = $LASTEXITCODE
+        # If we found a build tool, use it
+        if ($buildTool) {
+            Write-Host ""
+            Write-Host "========================================" -ForegroundColor Cyan
+            Write-Host "  JAVA PROJECT DETECTED" -ForegroundColor Cyan
+            Write-Host "========================================" -ForegroundColor Cyan
+            Write-Host ""
+            Write-Host "  Build Tool: " -NoNewline -ForegroundColor White
+            Write-Host "$($buildTool.ToUpper())$(if ($isSpringBoot) { ' + Spring Boot' })" -ForegroundColor Yellow
+            Write-Host "  Project Root: $projectRoot" -ForegroundColor Gray
+            Write-Host "  Build File: $(Split-Path -Leaf $buildFile)" -ForegroundColor Gray
+            Write-Host ""
             
-            if ($compileExitCode -ne 0) {
-                $errorOutput = Get-Content $tempErr -Raw -ErrorAction SilentlyContinue
-                Format-ErrorReport -Language "Java" -Phase "Compilation" -RawError $errorOutput -FilePath $File.FullName -ExitCode $compileExitCode
+            Push-Location $projectRoot
+            $tempErr = [System.IO.Path]::GetTempFileName()
+            
+            try {
+                if ($buildTool -eq "maven") {
+                    # Check for Maven
+                    $mvn = Get-Command mvn -ErrorAction SilentlyContinue
+                    if (-not $mvn) {
+                        Write-Err "Maven (mvn) not found!"
+                        Write-Host ""
+                        Write-Host "  To install Maven:" -ForegroundColor Yellow
+                        Write-Host "  choco install maven" -ForegroundColor Cyan
+                        Write-Host "  Restart your terminal after installation" -ForegroundColor Gray
+                        Write-Host ""
+                        Pop-Location
+                        exit 1
+                    }
+                    
+                    if ($isSpringBoot) {
+                        # Spring Boot project
+                        Write-Info "Running Spring Boot application..."
+                        Write-Host ""
+                        Write-Host "  Command: mvn spring-boot:run" -ForegroundColor Gray
+                        Write-Host ""
+                        Write-OutputSeparator
+                        
+                        & mvn spring-boot:run 2>&1 | ForEach-Object {
+                            if ($_ -match "ERROR|Exception|FAILURE") {
+                                Write-Host $_ -ForegroundColor Red
+                            }
+                            elseif ($_ -match "WARNING") {
+                                Write-Host $_ -ForegroundColor Yellow
+                            }
+                            elseif ($_ -match "Started|Running|Tomcat|Netty") {
+                                Write-Host $_ -ForegroundColor Green
+                            }
+                            else {
+                                Write-Host $_
+                            }
+                        }
+                        $exitCode = $LASTEXITCODE
+                    }
+                    else {
+                        # Regular Maven project - compile and run
+                        Write-Info "Downloading dependencies and compiling..."
+                        Write-Host "  Command: mvn compile -q" -ForegroundColor Gray
+                        Write-Host ""
+                        
+                        & mvn compile -q 2>$tempErr
+                        $compileExitCode = $LASTEXITCODE
+                        
+                        if ($compileExitCode -ne 0) {
+                            $errorOutput = Get-Content $tempErr -Raw -ErrorAction SilentlyContinue
+                            # Also capture stdout for Maven errors
+                            Write-Err "Maven compilation failed"
+                            Format-ErrorReport -Language "Java" -Phase "Maven Compile" -RawError $errorOutput -FilePath $buildFile -ExitCode $compileExitCode
+                            Pop-Location
+                            exit $compileExitCode
+                        }
+                        
+                        Write-Success "Compilation successful!"
+                        
+                        # Try to find and run the main class
+                        $content = Get-Content $File.FullName -Raw -ErrorAction SilentlyContinue
+                        $classMatch = [regex]::Match($content, 'public\s+class\s+(\w+)')
+                        $className = if ($classMatch.Success) { $classMatch.Groups[1].Value } else { $FileBaseName }
+                        
+                        # Try to find the package
+                        $packageMatch = [regex]::Match($content, 'package\s+([\w.]+)')
+                        $fullClassName = if ($packageMatch.Success) { "$($packageMatch.Groups[1].Value).$className" } else { $className }
+                        
+                        Write-Info "Running: $fullClassName"
+                        Write-OutputSeparator
+                        
+                        # Use exec:java plugin
+                        & mvn exec:java "-Dexec.mainClass=$fullClassName" -q 2>&1 | ForEach-Object {
+                            if ($_ -match "Exception|Error:" -and $_ -notmatch "erroraction") {
+                                Write-Host $_ -ForegroundColor Red
+                            }
+                            else {
+                                Write-Host $_
+                            }
+                        }
+                        $exitCode = $LASTEXITCODE
+                        
+                        if ($exitCode -ne 0) {
+                            Write-Host ""
+                            Write-Warn "exec:java failed. Trying alternative method..."
+                            Write-Host ""
+                            
+                            # Alternative: run with java -cp
+                            $targetDir = Join-Path $projectRoot "target\classes"
+                            if (Test-Path $targetDir) {
+                                & java -cp $targetDir $fullClassName @Arguments 2>$tempErr
+                                $exitCode = $LASTEXITCODE
+                            }
+                        }
+                    }
+                }
+                elseif ($buildTool -eq "gradle") {
+                    # Check for Gradle
+                    $gradle = Get-Command gradle -ErrorAction SilentlyContinue
+                    $gradlew = Join-Path $projectRoot "gradlew.bat"
+                    $gradleCmd = if (Test-Path $gradlew) { $gradlew } elseif ($gradle) { "gradle" } else { $null }
+                    
+                    if (-not $gradleCmd) {
+                        Write-Err "Gradle not found!"
+                        Write-Host ""
+                        Write-Host "  To install Gradle:" -ForegroundColor Yellow
+                        Write-Host "  choco install gradle" -ForegroundColor Cyan
+                        Write-Host "  Or use the Gradle wrapper (gradlew) in your project" -ForegroundColor Gray
+                        Write-Host ""
+                        Pop-Location
+                        exit 1
+                    }
+                    
+                    if ($isSpringBoot) {
+                        # Spring Boot project
+                        Write-Info "Running Spring Boot application..."
+                        Write-Host ""
+                        Write-Host "  Command: $gradleCmd bootRun" -ForegroundColor Gray
+                        Write-Host ""
+                        Write-OutputSeparator
+                        
+                        & $gradleCmd bootRun 2>&1 | ForEach-Object {
+                            if ($_ -match "ERROR|Exception|FAILURE") {
+                                Write-Host $_ -ForegroundColor Red
+                            }
+                            elseif ($_ -match "WARNING") {
+                                Write-Host $_ -ForegroundColor Yellow
+                            }
+                            elseif ($_ -match "Started|Running|Tomcat|Netty") {
+                                Write-Host $_ -ForegroundColor Green
+                            }
+                            else {
+                                Write-Host $_
+                            }
+                        }
+                        $exitCode = $LASTEXITCODE
+                    }
+                    else {
+                        # Regular Gradle project - build and run
+                        Write-Info "Downloading dependencies and compiling..."
+                        Write-Host "  Command: $gradleCmd build -q" -ForegroundColor Gray
+                        Write-Host ""
+                        
+                        & $gradleCmd build -q 2>$tempErr
+                        $compileExitCode = $LASTEXITCODE
+                        
+                        if ($compileExitCode -ne 0) {
+                            $errorOutput = Get-Content $tempErr -Raw -ErrorAction SilentlyContinue
+                            Write-Err "Gradle build failed"
+                            Format-ErrorReport -Language "Java" -Phase "Gradle Build" -RawError $errorOutput -FilePath $buildFile -ExitCode $compileExitCode
+                            Pop-Location
+                            exit $compileExitCode
+                        }
+                        
+                        Write-Success "Build successful!"
+                        
+                        # Try to run with gradle run
+                        Write-Info "Running application..."
+                        Write-OutputSeparator
+                        
+                        & $gradleCmd run -q 2>&1 | ForEach-Object {
+                            if ($_ -match "Exception|Error:" -and $_ -notmatch "erroraction") {
+                                Write-Host $_ -ForegroundColor Red
+                            }
+                            else {
+                                Write-Host $_
+                            }
+                        }
+                        $exitCode = $LASTEXITCODE
+                    }
+                }
+            }
+            finally {
                 Pop-Location
-                exit $compileExitCode
+                Remove-Item $tempErr -ErrorAction SilentlyContinue
             }
-            Write-Success "Compiled successfully!"
+        }
+        else {
+            # No build tool found - use traditional javac/java
+            Write-Dbg "No pom.xml or build.gradle found, using javac directly"
             
-            Write-OutputSeparator
+            # Parse the file to find the public class name
+            $content = Get-Content $File.FullName -Raw -ErrorAction SilentlyContinue
+            if (-not $content) {
+                Write-Err "Could not read file: $($File.FullName)"
+                exit 1
+            }
             
-            # Run
-            "" | Out-File $tempErr -Encoding UTF8
-            & java -cp $classpath $className @Arguments 2>$tempErr
-            $exitCode = $LASTEXITCODE
+            $classMatch = [regex]::Match($content, 'public\s+class\s+(\w+)')
+            $className = if ($classMatch.Success) { $classMatch.Groups[1].Value } else { $FileBaseName }
             
-            if ($exitCode -ne 0) {
-                $errorOutput = Get-Content $tempErr -Raw -ErrorAction SilentlyContinue
-                if ($errorOutput) {
-                    Format-ErrorReport -Language "Java" -Phase "Runtime" -RawError $errorOutput -FilePath $File.FullName -ExitCode $exitCode
+            # Validate class name matches filename
+            if ($className -ne $FileBaseName) {
+                Write-Warn "Class name '$className' does not match filename '$FileBaseName'"
+                Write-Host "  Java requires the public class name to match the filename." -ForegroundColor Yellow
+            }
+            
+            Write-Info "Detected class: $className"
+            
+            # Check for MySQL connector if code uses JDBC
+            $classpath = "."
+            if ($content -match "java\.sql\." -or $content -match "jdbc:") {
+                Write-Info "JDBC usage detected, searching for MySQL connector..."
+                $scriptDir = $PSScriptRoot
+                $projectRootDir = Split-Path -Parent $scriptDir
+                $connectorPaths = @(
+                    "$projectRootDir\lib\mysql-connector-j\mysql-connector-j-8.3.0.jar",
+                    "$projectRootDir\lib\mysql-connector-j\mysql-connector-j-8.3.0\mysql-connector-j-8.3.0.jar"
+                )
+                foreach ($cp in $connectorPaths) {
+                    $found = Get-ChildItem -Path $cp -ErrorAction SilentlyContinue | Select-Object -First 1
+                    if ($found) {
+                        $classpath = ".;$($found.FullName)"
+                        Write-Info "Found connector: $($found.Name)"
+                        break
+                    }
                 }
             }
             
-            # Cleanup .class files if -Clean specified
-            if ($Clean) {
-                Get-ChildItem -Path $FileDir -Filter "*.class" | Remove-Item -Force -ErrorAction SilentlyContinue
+            # Check for any .jar files in a lib folder
+            $libDir = Join-Path $FileDir "lib"
+            if (Test-Path $libDir) {
+                $jars = Get-ChildItem -Path $libDir -Filter "*.jar" -ErrorAction SilentlyContinue
+                if ($jars) {
+                    Write-Info "Found $($jars.Count) JAR(s) in lib folder"
+                    foreach ($jar in $jars) {
+                        $classpath += ";$($jar.FullName)"
+                    }
+                }
             }
-        }
-        finally {
-            Pop-Location
-            Remove-Item $tempErr -ErrorAction SilentlyContinue
+            
+            # Compile
+            Write-Info "Compiling..."
+            Push-Location $FileDir
+            $tempErr = [System.IO.Path]::GetTempFileName()
+            try {
+                & javac -cp $classpath $FileName 2>$tempErr
+                $compileExitCode = $LASTEXITCODE
+                
+                if ($compileExitCode -ne 0) {
+                    $errorOutput = Get-Content $tempErr -Raw -ErrorAction SilentlyContinue
+                    Format-ErrorReport -Language "Java" -Phase "Compilation" -RawError $errorOutput -FilePath $File.FullName -ExitCode $compileExitCode
+                    Pop-Location
+                    exit $compileExitCode
+                }
+                Write-Success "Compiled successfully!"
+                
+                Write-OutputSeparator
+                
+                # Run
+                "" | Out-File $tempErr -Encoding UTF8
+                & java -cp $classpath $className @Arguments 2>$tempErr
+                $exitCode = $LASTEXITCODE
+                
+                if ($exitCode -ne 0) {
+                    $errorOutput = Get-Content $tempErr -Raw -ErrorAction SilentlyContinue
+                    if ($errorOutput) {
+                        Format-ErrorReport -Language "Java" -Phase "Runtime" -RawError $errorOutput -FilePath $File.FullName -ExitCode $exitCode
+                    }
+                }
+                
+                # Cleanup .class files if -Clean specified
+                if ($Clean) {
+                    Get-ChildItem -Path $FileDir -Filter "*.class" | Remove-Item -Force -ErrorAction SilentlyContinue
+                }
+            }
+            finally {
+                Pop-Location
+                Remove-Item $tempErr -ErrorAction SilentlyContinue
+            }
         }
     }
     

@@ -25,6 +25,8 @@ if (-not $isAdmin) {
     This script will install and configure:
     - Chocolatey Package Manager
     - Java Development Kit (Latest OpenJDK)
+    - Apache Maven (for Java dependency management)
+    - Gradle (optional, for Gradle-based projects)
     - MinGW-w64 (GCC/G++ for C/C++)
     - Python (Latest or 3.8 - User Choice)
     - MySQL Server and MySQL Workbench
@@ -651,6 +653,68 @@ if (!$gitCheck) {
 }
 else {
     Write-Success "Git is already installed."
+}
+
+# Install Maven (required for d1run Java project support)
+$mvnCheck = Get-Command mvn -ErrorAction SilentlyContinue
+if (!$mvnCheck) {
+    Write-Info "Installing Apache Maven (for Java project builds)..."
+    choco install maven -y
+    Write-Success "Maven installed!"
+    
+    # Refresh PATH to pick up maven
+    $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
+}
+else {
+    Write-Success "Maven is already installed: $(mvn --version | Select-Object -First 1)"
+}
+
+# Set M2_HOME for Maven
+$mavenPaths = @(
+    "C:\ProgramData\chocolatey\lib\maven\apache-maven-*",
+    "C:\Program Files\Apache\maven\*"
+)
+foreach ($pattern in $mavenPaths) {
+    $mavenDir = Get-ChildItem -Path $pattern -Directory -ErrorAction SilentlyContinue | Sort-Object Name -Descending | Select-Object -First 1
+    if ($mavenDir) {
+        [System.Environment]::SetEnvironmentVariable("M2_HOME", $mavenDir.FullName, "Machine")
+        $env:M2_HOME = $mavenDir.FullName
+        Write-Success "M2_HOME set to $($mavenDir.FullName)"
+        break
+    }
+}
+
+# Install Gradle (optional, for Gradle-based Java projects)
+$gradleCheck = Get-Command gradle -ErrorAction SilentlyContinue
+if (!$gradleCheck) {
+    Write-Host ""
+    Write-Host "Gradle is a popular build tool for Java (especially Android and Spring Boot)." -ForegroundColor Cyan
+    Write-Host "  [Y] Yes, install Gradle" -ForegroundColor White
+    Write-Host "  [N] No, skip - I'll use Maven only or install Gradle later" -ForegroundColor White
+    Write-Host ""
+    
+    $installGradle = $null
+    while ($installGradle -notmatch '^[YyNn]$') {
+        $installGradle = Read-Host "Install Gradle? (Y/N)"
+        if ($installGradle -notmatch '^[YyNn]$') {
+            Write-Host "Invalid choice. Please enter Y or N." -ForegroundColor Red
+        }
+    }
+    
+    if ($installGradle -match '^[Yy]$') {
+        Write-Info "Installing Gradle..."
+        choco install gradle -y
+        Write-Success "Gradle installed!"
+        
+        # Refresh PATH
+        $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
+    }
+    else {
+        Write-Info "Skipping Gradle installation. You can install it later with: choco install gradle"
+    }
+}
+else {
+    Write-Success "Gradle is already installed: $(gradle --version | Select-Object -First 1)"
 }
 
 # Install Visual Studio Code (optional but useful)
