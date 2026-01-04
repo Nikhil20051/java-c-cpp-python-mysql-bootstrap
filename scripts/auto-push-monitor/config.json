@@ -11,5 +11,6 @@
                             "*.tmp"
                         ],
     "BotName":  "Code Preservation Bot",
-    "BotEmail":  "preservation-bot@dmj.one"
+    "BotEmail":  "preservation-bot@dmj.one",
+    "AutoSync":  true
 }

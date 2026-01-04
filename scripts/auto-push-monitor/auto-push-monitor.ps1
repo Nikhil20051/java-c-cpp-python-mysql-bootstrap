@@ -74,7 +74,9 @@ $DefaultConfig = @{
     ExcludePatterns      = @("*.log", "*.pid", "node_modules/*", ".git/*", "*.tmp")
     BotName              = "Code Preservation Bot"
     BotEmail             = "preservation-bot@dmj.one"
+    AutoSync             = $true
 }
+
 
 # ============================================================================
 # FUNCTIONS
@@ -334,6 +336,54 @@ function Invoke-AutoPush {
     }
 }
 
+function Invoke-AutoSync {
+    param([string]$RepoPath)
+    
+    Push-Location $RepoPath
+    try {
+        # Get current branch
+        $branch = git branch --show-current
+        if (-not $branch) { return $true } # Detached HEAD or empty
+        
+        # Check for remote updates quietly
+        git fetch origin -q 2>$null
+        
+        # Check if behind
+        $upstream = "origin/$branch"
+        $behind = git rev-list HEAD..$upstream --count 2>$null
+        
+        if ($behind -and [int]$behind -gt 0) {
+            Write-Log "Remote changes detected ($behind commits). Syncing..." "WARNING"
+            
+            # Attempt safe sync
+            # We use --rebase --autostash to handle dirty working directories gracefully
+            # This preserves local uncommitted work while applying remote updates
+            $syncResult = git pull --rebase --autostash origin $branch 2>&1
+            
+            if ($LASTEXITCODE -eq 0) {
+                Write-Log "Sync completed successfully." "SUCCESS"
+                return $true
+            }
+            else {
+                # Check if rebase failed (conflict)
+                if (Test-Path .git/rebase-merge -Or (Test-Path .git/rebase-apply)) {
+                    git rebase --abort 2>&1 | Out-Null
+                }
+                Write-Log "Sync failed due to conflict. Preserving local work." "ERROR"
+                Write-Log "Manual 'git pull' required to resolve conflicts." "WARNING"
+                return $false
+            }
+        }
+    }
+    catch {
+        Write-Log "Sync check failed: $_" "WARNING"
+    }
+    finally {
+        Pop-Location
+    }
+    return $true
+}
+
 function Find-GitRoot {
     param([string]$StartPath)
     $current = $StartPath
@@ -390,6 +440,30 @@ function Start-Monitoring {
     
     $config = Get-Config
     $ScriptLocation = $PSScriptRoot
+    
+    # Robust script path detection for Hot-Reload
+    # We prefer PSScriptRoot as it's cleaner for file-based scripts
+    $ScriptPath = Join-Path $PSScriptRoot "auto-push-monitor.ps1"
+    
+    # Verify the path exists and is a file
+    if (-not (Test-Path $ScriptPath -PathType Leaf)) {
+        # Fallback to Definition only if it is an ExternalScript (path)
+        if ($MyInvocation.MyCommand.CommandType -eq 'ExternalScript') {
+            $ScriptPath = $MyInvocation.MyCommand.Definition
+        }
+        else {
+            $ScriptPath = $null
+        }
+    }
+    
+    # Store initial modification time safely
+    $lastModTime = $null
+    if ($ScriptPath -and (Test-Path $ScriptPath -PathType Leaf)) {
+        $lastModTime = (Get-Item $ScriptPath).LastWriteTime
+    }
+    else {
+        Write-Log "Hot-reload disabled: Cannot determine effective script path." "WARNING"
+    }
 
     # 1. AUTO-DETECT LOGIC
     # If no folder passed, and config invalid (or we just suspect it might be stale), try to detect.
@@ -479,6 +553,32 @@ function Start-Monitoring {
     
     try {
         while ($true) {
+            # 0. Hot-Reload Check
+            try {
+                $currentModTime = (Get-Item $ScriptPath).LastWriteTime
+                if ($currentModTime -ne $lastModTime) {
+                    Write-Log "Source code updated. Reloading monitor..." "WARNING"
+                    
+                    # Release PID file so new instance can take over
+                    if (Test-Path $PidFile) { Remove-Item $PidFile -Force -ErrorAction SilentlyContinue }
+                    
+                    # Spawn new instance in same window
+                    # passing current config to preserve state
+                    Start-Process powershell -ArgumentList "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "`"$ScriptPath`"", "-Start", "-TargetFolder", "`"$($config.TargetFolder)`"", "-LineThreshold", "$($config.LineThreshold)", "-CheckIntervalSeconds", "$($config.CheckIntervalSeconds)" -NoNewWindow
+                    
+                    exit
+                }
+            }
+            catch {
+                Write-Log "Failed to check self-update status: $_" "WARNING"
+            }
+
+            # 1. Sync Phase (if enabled)
+            if ($config.AutoSync) {
+                Invoke-AutoSync -RepoPath $config.TargetFolder | Out-Null
+            }
+            
+            # 2. Check Local Changes
             $changes = Get-UnstagedChanges -RepoPath $config.TargetFolder
             
             if ($changes.TotalChanges -ge $config.LineThreshold) {
