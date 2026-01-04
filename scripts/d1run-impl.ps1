@@ -386,6 +386,11 @@ function Get-ErrorSuggestions {
                 $suggestions += "Check variable types match expected types"
                 $suggestions += "Use proper type casting if needed"
             }
+            if ($errorLower -match "no such file or directory|file not found") {
+                $suggestions += "d1run can AUTO-INSTALL many missing libraries - answer 'Y' when prompted!"
+                $suggestions += "For external libraries: install via vcpkg (vcpkg install <package-name>)"
+                $suggestions += "After vcpkg install, compile with: gcc -I C:\vcpkg\installed\x64-mingw-static\include ..."
+            }
         }
         
         "c++" {
@@ -428,6 +433,12 @@ function Get-ErrorSuggestions {
             if ($errorLower -match "bad_alloc") {
                 $suggestions += "Check for memory allocation failures"
                 $suggestions += "Reduce memory usage or handle allocation errors"
+            }
+            if ($errorLower -match "no such file or directory|file not found") {
+                $suggestions += "d1run can AUTO-INSTALL many missing libraries - answer 'Y' when prompted!"
+                $suggestions += "For external libraries: install via vcpkg (vcpkg install <package-name>)"
+                $suggestions += "Common libraries: vcpkg install boost, nlohmann-json, fmt, eigen3"
+                $suggestions += "After vcpkg install, compile with: g++ -I C:\vcpkg\installed\x64-mingw-static\include ..."
             }
         }
         
@@ -1053,7 +1064,7 @@ function Show-BuildInfo {
 function Show-Help {
     Write-Host ''
     Write-Host '==============================================================' -ForegroundColor Cyan
-    Write-Host '  d1run v3.0 - Universal Code Runner' -ForegroundColor Cyan
+    Write-Host '  d1run v3.1 - Universal Code Runner' -ForegroundColor Cyan
     Write-Host '  Part of the dmj.one initiative' -ForegroundColor Cyan
     Write-Host '==============================================================' -ForegroundColor Cyan
     Write-Host ''
@@ -1088,6 +1099,8 @@ function Show-Help {
     Write-Host '  -Version            Show version'
     Write-Host ''
     Write-Host 'KEY FEATURES:' -ForegroundColor Magenta
+    Write-Host '  * Python: AUTO-CREATE venv + install requirements.txt!'
+    Write-Host '  * C/C++: AUTO-INSTALL missing dependencies via vcpkg!'
     Write-Host '  * C/C++ builds are STATIC by default - run on ANY Windows!'
     Write-Host '  * Executables are KEPT in the same folder as source'
     Write-Host '  * Detailed error reports with line numbers and suggestions'
@@ -1102,10 +1115,17 @@ function Show-Version {
     Write-Host "Created by Nikhil Bhardwaj"
     Write-Host ""
     Write-Host "Features:" -ForegroundColor Yellow
-    Write-Host "  * Release builds by default (static linking for C/C++)"
+    Write-Host "  * Python: Auto-create venv + install from requirements.txt"
+    Write-Host "  * Python: Auto-install missing modules on ModuleNotFoundError"
+    Write-Host "  * C/C++: AUTO-INSTALL missing libraries via vcpkg"
+    Write-Host "  * C/C++: Release builds by default (static linking)"
     Write-Host "  * Detailed error reports with line numbers"
     Write-Host "  * Language-specific fix suggestions"
     Write-Host "  * Arguments passed directly to your program"
+    Write-Host ""
+    Write-Host "Supported C/C++ Libraries (auto-install):" -ForegroundColor Yellow
+    Write-Host "  Boost, nlohmann/json, fmt, spdlog, Eigen, OpenCV, libcurl,"
+    Write-Host "  OpenSSL, SQLite3, Google Test, Catch2, Dear ImGui, GLFW, GLAD"
     Write-Host ""
 }
 
@@ -1204,8 +1224,8 @@ switch ($FileExt) {
     ".py" {
         Write-Info "Language: Python"
         
-        # Find Python executable (avoid Windows Store stub)
-        $pythonExe = $null
+        # Find system Python executable (avoid Windows Store stub)
+        $systemPython = $null
         $pythonPaths = @(
             "C:\Python313\python.exe",
             "C:\Python312\python.exe",
@@ -1219,13 +1239,13 @@ switch ($FileExt) {
             "C:\Program Files\Python38\python.exe"
         )
         foreach ($p in $pythonPaths) {
-            if (Test-Path $p) { $pythonExe = $p; break }
+            if (Test-Path $p) { $systemPython = $p; break }
         }
-        if (-not $pythonExe) {
+        if (-not $systemPython) {
             $pythonCmd = Get-Command python -ErrorAction SilentlyContinue | Where-Object { $_.Source -notlike "*WindowsApps*" }
-            if ($pythonCmd) { $pythonExe = $pythonCmd.Source }
+            if ($pythonCmd) { $systemPython = $pythonCmd.Source }
         }
-        if (-not $pythonExe) {
+        if (-not $systemPython) {
             Write-Err "Python not found!"
             Write-Host ""
             Write-Host "  To install Python:" -ForegroundColor Yellow
@@ -1235,6 +1255,143 @@ switch ($FileExt) {
             Write-Host "  3. Restart your terminal after installation" -ForegroundColor Gray
             Write-Host ""
             exit 1
+        }
+        
+        Write-Dbg "System Python: $systemPython"
+        
+        # Check for requirements.txt in the same folder as the Python file
+        $requirementsPath = Join-Path $FileDir "requirements.txt"
+        $venvPath = Join-Path $FileDir ".venv"
+        $venvPython = Join-Path $venvPath "Scripts\python.exe"
+        $venvPip = Join-Path $venvPath "Scripts\pip.exe"
+        $pythonExe = $systemPython  # Default to system Python
+        
+        if (Test-Path $requirementsPath) {
+            Write-Info "Found requirements.txt - setting up virtual environment..."
+            
+            # Check if venv exists
+            $venvNeedsSetup = $false
+            if (-not (Test-Path $venvPython)) {
+                Write-Host ""
+                Write-Host "========================================" -ForegroundColor Yellow
+                Write-Host "  CREATING VIRTUAL ENVIRONMENT" -ForegroundColor Yellow
+                Write-Host "========================================" -ForegroundColor Yellow
+                Write-Host ""
+                Write-Host "  Location: $venvPath" -ForegroundColor Gray
+                Write-Host ""
+                
+                try {
+                    Write-Info "Creating virtual environment..."
+                    & $systemPython -m venv $venvPath 2>&1 | Out-Null
+                    if ($LASTEXITCODE -ne 0) {
+                        Write-Err "Failed to create virtual environment"
+                        Write-Host "  Falling back to system Python..." -ForegroundColor Yellow
+                    }
+                    else {
+                        Write-Success "Virtual environment created!"
+                        $venvNeedsSetup = $true
+                    }
+                }
+                catch {
+                    Write-Err "Exception creating venv: $($_.Exception.Message)"
+                    Write-Host "  Falling back to system Python..." -ForegroundColor Yellow
+                }
+            }
+            
+            # Use venv Python if it exists
+            if (Test-Path $venvPython) {
+                $pythonExe = $venvPython
+                Write-Info "Using virtual environment Python"
+                
+                # Check if we need to install/update requirements
+                $requirementsHash = (Get-FileHash $requirementsPath -Algorithm MD5).Hash
+                $hashFile = Join-Path $venvPath ".requirements_hash"
+                $needsInstall = $venvNeedsSetup
+                
+                if (-not $needsInstall -and (Test-Path $hashFile)) {
+                    $storedHash = Get-Content $hashFile -Raw -ErrorAction SilentlyContinue
+                    if ($storedHash -and $storedHash.Trim() -ne $requirementsHash) {
+                        Write-Info "requirements.txt has changed - updating dependencies..."
+                        $needsInstall = $true
+                    }
+                }
+                elseif (-not (Test-Path $hashFile)) {
+                    $needsInstall = $true
+                }
+                
+                if ($needsInstall) {
+                    Write-Host ""
+                    Write-Host "========================================" -ForegroundColor Cyan
+                    Write-Host "  INSTALLING DEPENDENCIES" -ForegroundColor Cyan
+                    Write-Host "========================================" -ForegroundColor Cyan
+                    Write-Host ""
+                    
+                    # First upgrade pip
+                    Write-Info "Upgrading pip..."
+                    & $pythonExe -m pip install --upgrade pip --quiet 2>&1 | Out-Null
+                    
+                    # Read and display requirements
+                    $requirements = Get-Content $requirementsPath | Where-Object { $_ -and $_ -notmatch "^\s*#" }
+                    $reqCount = ($requirements | Measure-Object).Count
+                    Write-Host "  Installing $reqCount package(s) from requirements.txt:" -ForegroundColor Gray
+                    Write-Host ""
+                    
+                    foreach ($req in $requirements) {
+                        $reqTrimmed = $req.Trim()
+                        if ($reqTrimmed) {
+                            # Extract package name (before any version specifier)
+                            $pkgName = ($reqTrimmed -split '[<>=!~\[\]]')[0]
+                            Write-Host "    - $reqTrimmed" -ForegroundColor White
+                        }
+                    }
+                    Write-Host ""
+                    
+                    # Install requirements
+                    Write-Info "Installing packages (this may take a moment)..."
+                    $pipOutput = & $pythonExe -m pip install -r $requirementsPath 2>&1
+                    $pipExitCode = $LASTEXITCODE
+                    
+                    if ($pipExitCode -eq 0) {
+                        Write-Success "All dependencies installed successfully!"
+                        # Store the hash for future comparison
+                        $requirementsHash | Out-File $hashFile -Encoding UTF8 -NoNewline
+                    }
+                    else {
+                        Write-Err "Some dependencies failed to install"
+                        Write-Host ""
+                        Write-Host "  pip output:" -ForegroundColor Yellow
+                        $pipOutput | ForEach-Object { 
+                            if ($_ -match "error|failed|could not") {
+                                Write-Host "  $_" -ForegroundColor Red
+                            }
+                            else {
+                                Write-Host "  $_" -ForegroundColor Gray
+                            }
+                        }
+                        Write-Host ""
+                        Write-Host "  SUGGESTIONS:" -ForegroundColor Cyan
+                        Write-Host "  1. Check package names in requirements.txt are correct" -ForegroundColor White
+                        Write-Host "  2. Try installing packages manually: pip install <package>" -ForegroundColor White
+                        Write-Host "  3. Check your internet connection" -ForegroundColor White
+                        Write-Host ""
+                        
+                        # Still try to run the script, some packages may have installed
+                        Write-Warn "Attempting to run script anyway..."
+                    }
+                    
+                    Write-Host ""
+                }
+                else {
+                    Write-Dbg "Dependencies already installed (requirements.txt unchanged)"
+                }
+            }
+        }
+        else {
+            # No requirements.txt - check if there's a venv anyway
+            if (Test-Path $venvPython) {
+                $pythonExe = $venvPython
+                Write-Dbg "Using existing virtual environment"
+            }
         }
         
         Write-Dbg "Using: $pythonExe"
@@ -1248,7 +1405,57 @@ switch ($FileExt) {
             
             if ($exitCode -ne 0) {
                 $errorOutput = Get-Content $tempErr -Raw -ErrorAction SilentlyContinue
-                if ($errorOutput) {
+                
+                # Check for ModuleNotFoundError - might need to install missing module
+                if ($errorOutput -match "ModuleNotFoundError: No module named '([^']+)'") {
+                    $missingModule = $Matches[1]
+                    Write-Host ""
+                    Write-Host "========================================" -ForegroundColor Yellow
+                    Write-Host "  MISSING PYTHON MODULE DETECTED" -ForegroundColor Yellow
+                    Write-Host "========================================" -ForegroundColor Yellow
+                    Write-Host ""
+                    Write-Host "  Missing module: " -NoNewline -ForegroundColor White
+                    Write-Host "$missingModule" -ForegroundColor Red
+                    Write-Host ""
+                    
+                    # Offer to install
+                    $response = Read-Host "  Install '$missingModule' now? (Y/N)"
+                    
+                    if ($response -match "^[Yy]") {
+                        Write-Info "Installing $missingModule..."
+                        
+                        # Ensure we're using pip from the right environment
+                        $pipToUse = if ($pythonExe -eq $venvPython -and (Test-Path $venvPip)) { $venvPip } else { "$pythonExe -m pip" }
+                        
+                        & $pythonExe -m pip install $missingModule 2>&1 | Out-Null
+                        $installExitCode = $LASTEXITCODE
+                        
+                        if ($installExitCode -eq 0) {
+                            Write-Success "$missingModule installed! Retrying..."
+                            Write-Host ""
+                            
+                            # Retry running the script
+                            "" | Out-File $tempErr -Encoding UTF8
+                            & $pythonExe $File.FullName @Arguments 2>$tempErr
+                            $exitCode = $LASTEXITCODE
+                            
+                            if ($exitCode -ne 0) {
+                                $errorOutput = Get-Content $tempErr -Raw -ErrorAction SilentlyContinue
+                                if ($errorOutput) {
+                                    Format-ErrorReport -Language "Python" -Phase "Runtime" -RawError $errorOutput -FilePath $File.FullName -ExitCode $exitCode
+                                }
+                            }
+                        }
+                        else {
+                            Write-Err "Failed to install $missingModule"
+                            Format-ErrorReport -Language "Python" -Phase "Runtime" -RawError $errorOutput -FilePath $File.FullName -ExitCode $exitCode
+                        }
+                    }
+                    else {
+                        Format-ErrorReport -Language "Python" -Phase "Runtime" -RawError $errorOutput -FilePath $File.FullName -ExitCode $exitCode
+                    }
+                }
+                elseif ($errorOutput) {
                     Format-ErrorReport -Language "Python" -Phase "Runtime" -RawError $errorOutput -FilePath $File.FullName -ExitCode $exitCode
                 }
             }
@@ -1411,8 +1618,40 @@ switch ($FileExt) {
             
             if ($compileExitCode -ne 0) {
                 $errorOutput = Get-Content $tempErr -Raw -ErrorAction SilentlyContinue
-                Format-ErrorReport -Language "C" -Phase "Compilation" -RawError $errorOutput -FilePath $File.FullName -ExitCode $compileExitCode
-                exit $compileExitCode
+                
+                # Check for missing dependency and offer to install
+                $depResult = Resolve-CppDependencies -SourceFile $File.FullName -ErrorOutput $errorOutput
+                
+                if ($depResult.IncludePaths.Count -gt 0 -or $depResult.LibPaths.Count -gt 0) {
+                    # Retry compilation with added include/lib paths
+                    $retryArgs = $compileArgs.Clone()
+                    foreach ($incPath in $depResult.IncludePaths) {
+                        $retryArgs += "-I$incPath"
+                    }
+                    foreach ($libPath in $depResult.LibPaths) {
+                        $retryArgs += "-L$libPath"
+                    }
+                    
+                    Write-Info "Retrying compilation with dependency paths..."
+                    Write-Dbg "gcc $($retryArgs -join ' ')"
+                    
+                    "" | Out-File $tempErr -Encoding UTF8
+                    & gcc @retryArgs 2>$tempErr
+                    $compileExitCode = $LASTEXITCODE
+                    
+                    if ($compileExitCode -eq 0) {
+                        Write-Success "Compilation succeeded after installing dependencies!"
+                    }
+                    else {
+                        $errorOutput = Get-Content $tempErr -Raw -ErrorAction SilentlyContinue
+                        Format-ErrorReport -Language "C" -Phase "Compilation" -RawError $errorOutput -FilePath $File.FullName -ExitCode $compileExitCode
+                        exit $compileExitCode
+                    }
+                }
+                else {
+                    Format-ErrorReport -Language "C" -Phase "Compilation" -RawError $errorOutput -FilePath $File.FullName -ExitCode $compileExitCode
+                    exit $compileExitCode
+                }
             }
             
             Write-Success "Compiled successfully!"
@@ -1498,8 +1737,40 @@ switch ($FileExt) {
             
             if ($compileExitCode -ne 0) {
                 $errorOutput = Get-Content $tempErr -Raw -ErrorAction SilentlyContinue
-                Format-ErrorReport -Language "C++" -Phase "Compilation" -RawError $errorOutput -FilePath $File.FullName -ExitCode $compileExitCode
-                exit $compileExitCode
+                
+                # Check for missing dependency and offer to install
+                $depResult = Resolve-CppDependencies -SourceFile $File.FullName -ErrorOutput $errorOutput
+                
+                if ($depResult.IncludePaths.Count -gt 0 -or $depResult.LibPaths.Count -gt 0) {
+                    # Retry compilation with added include/lib paths
+                    $retryArgs = $compileArgs.Clone()
+                    foreach ($incPath in $depResult.IncludePaths) {
+                        $retryArgs += "-I$incPath"
+                    }
+                    foreach ($libPath in $depResult.LibPaths) {
+                        $retryArgs += "-L$libPath"
+                    }
+                    
+                    Write-Info "Retrying compilation with dependency paths..."
+                    Write-Dbg "g++ $($retryArgs -join ' ')"
+                    
+                    "" | Out-File $tempErr -Encoding UTF8
+                    & g++ @retryArgs 2>$tempErr
+                    $compileExitCode = $LASTEXITCODE
+                    
+                    if ($compileExitCode -eq 0) {
+                        Write-Success "Compilation succeeded after installing dependencies!"
+                    }
+                    else {
+                        $errorOutput = Get-Content $tempErr -Raw -ErrorAction SilentlyContinue
+                        Format-ErrorReport -Language "C++" -Phase "Compilation" -RawError $errorOutput -FilePath $File.FullName -ExitCode $compileExitCode
+                        exit $compileExitCode
+                    }
+                }
+                else {
+                    Format-ErrorReport -Language "C++" -Phase "Compilation" -RawError $errorOutput -FilePath $File.FullName -ExitCode $compileExitCode
+                    exit $compileExitCode
+                }
             }
             
             Write-Success "Compiled successfully!"

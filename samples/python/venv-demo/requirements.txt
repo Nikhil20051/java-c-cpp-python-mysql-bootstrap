@@ -1,0 +1,5 @@
+# Python dependencies for the demo app
+# d1run will automatically create a venv and install these!
+
+requests>=2.28.0
+colorama>=0.4.6
