@@ -65,7 +65,7 @@ param(
 # CONFIGURATION
 # ============================================
 $ErrorActionPreference = "Continue"
-$ScriptVersion = "3.0.0"
+$ScriptVersion = "3.1.0"
 $ScriptName = "d1run"
 
 # ============================================
@@ -509,6 +509,522 @@ function Get-ErrorSuggestions {
     $suggestions += "Use -VerboseOutput flag for more detailed debugging information"
     
     return $suggestions
+}
+
+# ============================================
+# C/C++ DEPENDENCY DETECTION & AUTO-INSTALL
+# ============================================
+
+# Known external library patterns and their installation info
+$script:CppLibraries = @{
+    # Boost Libraries (header-only subset)
+    "boost/multiprecision" = @{
+        Name        = "Boost.Multiprecision"
+        Type        = "vcpkg"
+        Package     = "boost-multiprecision"
+        HeaderOnly  = $true
+        Description = "High-precision arithmetic library"
+    }
+    "boost/asio"           = @{
+        Name        = "Boost.Asio"
+        Type        = "vcpkg"
+        Package     = "boost-asio"
+        HeaderOnly  = $false
+        Description = "Networking and low-level I/O"
+    }
+    "boost/filesystem"     = @{
+        Name        = "Boost.Filesystem"
+        Type        = "vcpkg"
+        Package     = "boost-filesystem"
+        HeaderOnly  = $false
+        Description = "Portable filesystem operations"
+    }
+    "boost/regex"          = @{
+        Name        = "Boost.Regex"
+        Type        = "vcpkg"
+        Package     = "boost-regex"
+        HeaderOnly  = $false
+        Description = "Regular expressions library"
+    }
+    "boost/thread"         = @{
+        Name        = "Boost.Thread"
+        Type        = "vcpkg"
+        Package     = "boost-thread"
+        HeaderOnly  = $false
+        Description = "Threading library"
+    }
+    "boost/date_time"      = @{
+        Name        = "Boost.DateTime"
+        Type        = "vcpkg"
+        Package     = "boost-date-time"
+        HeaderOnly  = $false
+        Description = "Date and time library"
+    }
+    "boost/json"           = @{
+        Name        = "Boost.JSON"
+        Type        = "vcpkg"
+        Package     = "boost-json"
+        HeaderOnly  = $true
+        Description = "JSON parsing library"
+    }
+    "boost/beast"          = @{
+        Name        = "Boost.Beast"
+        Type        = "vcpkg"
+        Package     = "boost-beast"
+        HeaderOnly  = $true
+        Description = "HTTP and WebSocket library"
+    }
+    "boost/"               = @{
+        Name        = "Boost"
+        Type        = "vcpkg"
+        Package     = "boost"
+        HeaderOnly  = $false
+        Description = "Complete Boost C++ Libraries"
+    }
+    # Other popular libraries
+    "nlohmann/json"        = @{
+        Name        = "nlohmann/json"
+        Type        = "vcpkg"
+        Package     = "nlohmann-json"
+        HeaderOnly  = $true
+        Description = "Modern JSON for C++"
+    }
+    "fmt/format"           = @{
+        Name        = "fmt"
+        Type        = "vcpkg"
+        Package     = "fmt"
+        HeaderOnly  = $false
+        Description = "Modern formatting library"
+    }
+    "spdlog/"              = @{
+        Name        = "spdlog"
+        Type        = "vcpkg"
+        Package     = "spdlog"
+        HeaderOnly  = $true
+        Description = "Fast logging library"
+    }
+    "Eigen/"               = @{
+        Name        = "Eigen"
+        Type        = "vcpkg"
+        Package     = "eigen3"
+        HeaderOnly  = $true
+        Description = "Linear algebra library"
+    }
+    "opencv2/"             = @{
+        Name        = "OpenCV"
+        Type        = "vcpkg"
+        Package     = "opencv4"
+        HeaderOnly  = $false
+        Description = "Computer vision library"
+    }
+    "curl/curl"            = @{
+        Name        = "libcurl"
+        Type        = "vcpkg"
+        Package     = "curl"
+        HeaderOnly  = $false
+        Description = "URL transfer library"
+    }
+    "openssl/"             = @{
+        Name        = "OpenSSL"
+        Type        = "vcpkg"
+        Package     = "openssl"
+        HeaderOnly  = $false
+        Description = "Cryptography library"
+    }
+    "sqlite3"              = @{
+        Name        = "SQLite3"
+        Type        = "vcpkg"
+        Package     = "sqlite3"
+        HeaderOnly  = $false
+        Description = "Embedded SQL database"
+    }
+    "gtest/"               = @{
+        Name        = "Google Test"
+        Type        = "vcpkg"
+        Package     = "gtest"
+        HeaderOnly  = $false
+        Description = "C++ testing framework"
+    }
+    "catch2/"              = @{
+        Name        = "Catch2"
+        Type        = "vcpkg"
+        Package     = "catch2"
+        HeaderOnly  = $true
+        Description = "Modern C++ testing framework"
+    }
+    "imgui"                = @{
+        Name        = "Dear ImGui"
+        Type        = "vcpkg"
+        Package     = "imgui"
+        HeaderOnly  = $false
+        Description = "Immediate mode GUI library"
+    }
+    "glfw"                 = @{
+        Name        = "GLFW"
+        Type        = "vcpkg"
+        Package     = "glfw3"
+        HeaderOnly  = $false
+        Description = "OpenGL windowing library"
+    }
+    "glad/"                = @{
+        Name        = "GLAD"
+        Type        = "vcpkg"
+        Package     = "glad"
+        HeaderOnly  = $false
+        Description = "OpenGL loader library"
+    }
+}
+
+function Get-CppDependencies {
+    param([string]$SourceFile)
+    
+    $dependencies = @()
+    $content = Get-Content $SourceFile -Raw -ErrorAction SilentlyContinue
+    if (-not $content) { return $dependencies }
+    
+    # Find all #include statements with angle brackets (external libs)
+    $includeMatches = [regex]::Matches($content, '#include\s*<([^>]+)>')
+    
+    foreach ($match in $includeMatches) {
+        $includePath = $match.Groups[1].Value
+        
+        # Skip standard library headers
+        $stdHeaders = @(
+            "iostream", "iomanip", "fstream", "sstream", "string", "cstring",
+            "vector", "map", "set", "list", "queue", "stack", "deque", "array",
+            "algorithm", "functional", "numeric", "iterator", "utility",
+            "memory", "limits", "cmath", "cstdlib", "cstdio", "ctime", "chrono",
+            "thread", "mutex", "condition_variable", "future", "atomic",
+            "exception", "stdexcept", "typeinfo", "type_traits", "concepts",
+            "optional", "variant", "any", "tuple", "bitset", "regex",
+            "filesystem", "random", "ratio", "complex", "valarray",
+            "cassert", "cctype", "cerrno", "cfenv", "cfloat", "cinttypes",
+            "ciso646", "climits", "clocale", "csetjmp", "csignal", "cstdarg",
+            "cstddef", "cstdint", "cwchar", "cwctype", "initializer_list",
+            "unordered_map", "unordered_set", "forward_list", "span", "ranges",
+            "format", "source_location", "numbers", "bit", "compare", "coroutine",
+            "new", "typeindex", "execution", "charconv", "syncstream", "latch",
+            "barrier", "semaphore", "stop_token", "version"
+        )
+        
+        # Check if this is a standard header
+        $isStdHeader = $false
+        $headerBase = ($includePath -split '/')[0]
+        if ($stdHeaders -contains $headerBase -or $stdHeaders -contains $includePath) {
+            $isStdHeader = $true
+        }
+        # Also check for C++ standard prefix patterns
+        if ($includePath -match "^(c[a-z]+|std[a-z]*)$") {
+            $isStdHeader = $true
+        }
+        
+        if (-not $isStdHeader) {
+            # Check against known libraries
+            foreach ($libPattern in $script:CppLibraries.Keys) {
+                if ($includePath -like "$libPattern*") {
+                    $libInfo = $script:CppLibraries[$libPattern]
+                    $dependencies += @{
+                        Include = $includePath
+                        Library = $libInfo
+                        Pattern = $libPattern
+                    }
+                    break
+                }
+            }
+            
+            # If not found in known libs, add as unknown dependency
+            $found = $false
+            foreach ($dep in $dependencies) {
+                if ($dep.Include -eq $includePath) { $found = $true; break }
+            }
+            if (-not $found) {
+                $dependencies += @{
+                    Include = $includePath
+                    Library = $null
+                    Pattern = $null
+                }
+            }
+        }
+    }
+    
+    return $dependencies
+}
+
+function Test-VcpkgInstalled {
+    $vcpkg = Get-Command vcpkg -ErrorAction SilentlyContinue
+    return $null -ne $vcpkg
+}
+
+function Get-VcpkgRoot {
+    # Try common locations
+    $possiblePaths = @(
+        "$env:VCPKG_ROOT",
+        "C:\vcpkg",
+        "C:\tools\vcpkg",
+        "$env:USERPROFILE\vcpkg",
+        "$env:LOCALAPPDATA\vcpkg"
+    )
+    
+    foreach ($path in $possiblePaths) {
+        if ($path -and (Test-Path (Join-Path $path "vcpkg.exe"))) {
+            return $path
+        }
+    }
+    return $null
+}
+
+function Install-Vcpkg {
+    Write-Host ""
+    Write-Host "========================================" -ForegroundColor Yellow
+    Write-Host "  INSTALLING VCPKG PACKAGE MANAGER" -ForegroundColor Yellow
+    Write-Host "========================================" -ForegroundColor Yellow
+    Write-Host ""
+    
+    $vcpkgDir = "C:\vcpkg"
+    
+    try {
+        if (-not (Test-Path $vcpkgDir)) {
+            Write-Info "Cloning vcpkg..."
+            & git clone https://github.com/Microsoft/vcpkg.git $vcpkgDir 2>&1 | Out-Null
+            if ($LASTEXITCODE -ne 0) {
+                Write-Err "Failed to clone vcpkg"
+                return $false
+            }
+        }
+        
+        Write-Info "Bootstrapping vcpkg..."
+        Push-Location $vcpkgDir
+        & .\bootstrap-vcpkg.bat 2>&1 | Out-Null
+        Pop-Location
+        
+        if ($LASTEXITCODE -ne 0) {
+            Write-Err "Failed to bootstrap vcpkg"
+            return $false
+        }
+        
+        # Add to PATH for this session
+        $env:PATH = "$vcpkgDir;$env:PATH"
+        $env:VCPKG_ROOT = $vcpkgDir
+        
+        Write-Success "vcpkg installed successfully!"
+        return $true
+    }
+    catch {
+        Write-Err "Failed to install vcpkg: $($_.Exception.Message)"
+        return $false
+    }
+}
+
+function Install-CppDependency {
+    param(
+        [hashtable]$Dependency,
+        [switch]$Force
+    )
+    
+    $libInfo = $Dependency.Library
+    if (-not $libInfo) {
+        Write-Warn "Unknown library for include: $($Dependency.Include)"
+        return $false
+    }
+    
+    Write-Host ""
+    Write-Host "========================================" -ForegroundColor Cyan
+    Write-Host "  INSTALLING: $($libInfo.Name)" -ForegroundColor Cyan
+    Write-Host "========================================" -ForegroundColor Cyan
+    Write-Host ""
+    Write-Host "  Description: $($libInfo.Description)" -ForegroundColor Gray
+    Write-Host "  Package: $($libInfo.Package)" -ForegroundColor Gray
+    Write-Host ""
+    
+    # Check for vcpkg
+    if (-not (Test-VcpkgInstalled)) {
+        Write-Warn "vcpkg not found. Attempting to install..."
+        
+        # Check for Git first
+        $git = Get-Command git -ErrorAction SilentlyContinue
+        if (-not $git) {
+            Write-Err "Git is required to install vcpkg but was not found."
+            Write-Host ""
+            Write-Host "  To install Git:" -ForegroundColor Yellow
+            Write-Host "  1. Run: choco install git" -ForegroundColor Cyan
+            Write-Host "  2. Restart your terminal" -ForegroundColor Gray
+            Write-Host ""
+            return $false
+        }
+        
+        if (-not (Install-Vcpkg)) {
+            return $false
+        }
+    }
+    
+    $vcpkgRoot = Get-VcpkgRoot
+    if (-not $vcpkgRoot) {
+        Write-Err "Could not locate vcpkg installation"
+        return $false
+    }
+    
+    $vcpkgExe = Join-Path $vcpkgRoot "vcpkg.exe"
+    $triplet = "x64-mingw-static"  # For static MinGW builds
+    
+    Write-Info "Installing $($libInfo.Package) via vcpkg..."
+    Write-Host "  This may take several minutes for large libraries..." -ForegroundColor Gray
+    Write-Host ""
+    
+    try {
+        # Try mingw triplet first (matches our g++ builds)
+        $result = & $vcpkgExe install "$($libInfo.Package):$triplet" 2>&1
+        $installExitCode = $LASTEXITCODE
+        
+        if ($installExitCode -ne 0) {
+            # Fallback to default triplet
+            $triplet = "x64-windows-static"
+            Write-Warn "MinGW build not available, trying Windows static build..."
+            $result = & $vcpkgExe install "$($libInfo.Package):$triplet" 2>&1
+            $installExitCode = $LASTEXITCODE
+        }
+        
+        if ($installExitCode -eq 0) {
+            Write-Success "$($libInfo.Name) installed successfully!"
+            
+            # Show include path info
+            $includePath = Join-Path $vcpkgRoot "installed\$triplet\include"
+            $libPath = Join-Path $vcpkgRoot "installed\$triplet\lib"
+            
+            Write-Host ""
+            Write-Host "  Include path: $includePath" -ForegroundColor Gray
+            Write-Host "  Library path: $libPath" -ForegroundColor Gray
+            Write-Host ""
+            
+            return @{
+                Success     = $true
+                IncludePath = $includePath
+                LibPath     = $libPath
+                Triplet     = $triplet
+            }
+        }
+        else {
+            Write-Err "Failed to install $($libInfo.Package)"
+            Write-Host ""
+            Write-Host "  vcpkg output:" -ForegroundColor Yellow
+            $result | ForEach-Object { Write-Host "  $_" -ForegroundColor Gray }
+            return $false
+        }
+    }
+    catch {
+        Write-Err "Exception during installation: $($_.Exception.Message)"
+        return $false
+    }
+}
+
+function Resolve-CppDependencies {
+    param(
+        [string]$SourceFile,
+        [string]$ErrorOutput
+    )
+    
+    $result = @{
+        NeedsInstall = $false
+        MissingLibs  = @()
+        IncludePaths = @()
+        LibPaths     = @()
+        LinkLibs     = @()
+    }
+    
+    # Check if error is about missing header
+    if ($ErrorOutput -notmatch "No such file or directory|cannot open source file|file not found") {
+        return $result
+    }
+    
+    # Parse which header is missing
+    $missingHeader = $null
+    if ($ErrorOutput -match "fatal error:\s*([^:]+):\s*No such file or directory") {
+        $missingHeader = $Matches[1].Trim()
+    }
+    elseif ($ErrorOutput -match "cannot open source file\s+[`"']?([^`"'\s]+)") {
+        $missingHeader = $Matches[1].Trim()
+    }
+    
+    if (-not $missingHeader) { return $result }
+    
+    Write-Host ""
+    Write-Host "========================================" -ForegroundColor Yellow
+    Write-Host "  MISSING DEPENDENCY DETECTED" -ForegroundColor Yellow
+    Write-Host "========================================" -ForegroundColor Yellow
+    Write-Host ""
+    Write-Host "  Missing header: " -NoNewline -ForegroundColor White
+    Write-Host "$missingHeader" -ForegroundColor Red
+    Write-Host ""
+    
+    # Find matching library
+    $matchedLib = $null
+    $matchedPattern = $null
+    foreach ($libPattern in $script:CppLibraries.Keys) {
+        if ($missingHeader -like "$libPattern*") {
+            $matchedLib = $script:CppLibraries[$libPattern]
+            $matchedPattern = $libPattern
+            break
+        }
+    }
+    
+    if ($matchedLib) {
+        Write-Host "  Identified as: " -NoNewline -ForegroundColor White
+        Write-Host "$($matchedLib.Name)" -ForegroundColor Cyan
+        Write-Host "  Description: $($matchedLib.Description)" -ForegroundColor Gray
+        Write-Host ""
+        
+        # Prompt user for auto-install
+        Write-Host "  Would you like d1run to automatically install this dependency?" -ForegroundColor Yellow
+        Write-Host "  This will use vcpkg (Microsoft's C++ package manager)." -ForegroundColor Gray
+        Write-Host ""
+        
+        $response = Read-Host "  Install $($matchedLib.Name)? (Y/N)"
+        
+        if ($response -match "^[Yy]") {
+            $installResult = Install-CppDependency -Dependency @{ Include = $missingHeader; Library = $matchedLib }
+            
+            if ($installResult -and $installResult.Success) {
+                $result.NeedsInstall = $false
+                $result.IncludePaths += $installResult.IncludePath
+                $result.LibPaths += $installResult.LibPath
+                
+                Write-Host ""
+                Write-Success "Dependency installed! Retrying compilation..."
+                Write-Host ""
+                
+                return $result
+            }
+        }
+        
+        # Show manual installation instructions
+        Write-Host ""
+        Write-Host "  MANUAL INSTALLATION OPTIONS:" -ForegroundColor Yellow
+        Write-Host ""
+        Write-Host "  Option 1 - Using vcpkg:" -ForegroundColor Cyan
+        Write-Host "    1. git clone https://github.com/Microsoft/vcpkg.git C:\vcpkg" -ForegroundColor White
+        Write-Host "    2. C:\vcpkg\bootstrap-vcpkg.bat" -ForegroundColor White
+        Write-Host "    3. C:\vcpkg\vcpkg install $($matchedLib.Package):x64-mingw-static" -ForegroundColor White
+        Write-Host "    4. Compile with: g++ -I C:\vcpkg\installed\x64-mingw-static\include ..." -ForegroundColor White
+        Write-Host ""
+        Write-Host "  Option 2 - Using Chocolatey (if available):" -ForegroundColor Cyan
+        Write-Host "    choco install boost" -ForegroundColor White
+        Write-Host ""
+        
+        $result.NeedsInstall = $true
+        $result.MissingLibs += $matchedLib
+    }
+    else {
+        Write-Host "  This header is from an unrecognized library." -ForegroundColor Yellow  
+        Write-Host ""
+        Write-Host "  SUGGESTIONS:" -ForegroundColor Cyan
+        Write-Host "  1. Search for the library online and download it" -ForegroundColor White
+        Write-Host "  2. Install via vcpkg: vcpkg search <library-name>" -ForegroundColor White
+        Write-Host "  3. Use header-only version if available" -ForegroundColor White
+        Write-Host ""
+        
+        $result.NeedsInstall = $true
+    }
+    
+    return $result
 }
 
 # ============================================

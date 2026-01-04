@@ -398,9 +398,23 @@ switch ($Language) {
     }
 }
 
+# ============================================
+# RUN DYNAMIC TESTS
+# ============================================
+
+$dynamicTestScript = Join-Path $PSScriptRoot "testing\dynamic-test-generator.ps1"
+if (Test-Path $dynamicTestScript) {
+    Write-Host ""
+    Write-Host ("=" * 60) -ForegroundColor Magenta
+    Write-Host "  Running Dynamic Test Suite (Auto-Generated Each Run)" -ForegroundColor Magenta
+    Write-Host ("=" * 60) -ForegroundColor Magenta
+    
+    $dynamicLanguage = if ($Language -eq "basic") { "all" } else { $Language }
+    & $dynamicTestScript -Language $dynamicLanguage -TestCount 5
+}
+
 Write-Host ""
 Write-Host ("*" * 60) -ForegroundColor Green
 Write-Host "*  Test Run Complete!                                        *" -ForegroundColor Green
 Write-Host ("*" * 60) -ForegroundColor Green
 Write-Host ""
-
