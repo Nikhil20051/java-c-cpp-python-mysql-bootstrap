@@ -39,8 +39,8 @@ You stay in command.
 If you want to change how often it saves, just open `config.json`.
 It is simple. It is readable.
 
-*   `LineThreshold`: How many lines of code trigger a save? (Default: 500)
-*   `CheckIntervalSeconds`: How often does it check? (Default: 30)
+*   `LineThreshold`: How many lines of code trigger a save? (Default: 250)
+*   `CheckIntervalSeconds`: How often does it check? (Default: 10)
 
 **Code without fear.**
 

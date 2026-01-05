@@ -1,6 +1,6 @@
 ﻿{
     "TargetFolder":  "D:\\experimentx\\java-c-cpp-python-mysql-bootstrap",
-    "LineThreshold":  500,
+    "LineThreshold":  250,
     "CheckIntervalSeconds":  30,
     "Enabled":  true,
     "ExcludePatterns":  [

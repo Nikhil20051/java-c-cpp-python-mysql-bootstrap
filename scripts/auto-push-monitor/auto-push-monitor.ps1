@@ -68,8 +68,8 @@ $LogFile = Join-Path $ScriptDir "monitor.log"
 # Default configuration
 $DefaultConfig = @{
     TargetFolder         = (Split-Path -Parent (Split-Path -Parent $ScriptDir))
-    LineThreshold        = 500
-    CheckIntervalSeconds = 30
+    LineThreshold        = 250
+    CheckIntervalSeconds = 10
     Enabled              = $true
     ExcludePatterns      = @("*.log", "*.pid", "node_modules/*", ".git/*", "*.tmp")
     BotName              = "Code Preservation Bot"
@@ -234,6 +234,41 @@ function Invoke-AutoPush {
     try {
         Write-Log "Detected $TotalChanges line changes - initiating auto-push..." "WARNING"
         
+        # HOOK: Run Workspace Cleanup
+        # We clean the workspace before pushing to ensure no binaries/artifacts are committed
+        $cleanupScript = Join-Path (Split-Path -Parent $ScriptDir) "clean-workspace.ps1"
+        if (Test-Path $cleanupScript) {
+            Write-Log "Running workspace cleanup before push..." "INFO"
+            # Run cleanup and capture output to log if needed, or suppress
+            try {
+                & $cleanupScript *>$null
+                Write-Log "Workspace cleanup completed." "SUCCESS"
+            }
+            catch {
+                Write-Log "Workspace cleanup failed: $_" "WARNING"
+            }
+        }
+
+        # HOOK: Update Project Statistics
+        $statsScript = Join-Path (Split-Path -Parent $ScriptDir) "count_lines.py"
+        if (Test-Path $statsScript) {
+            Write-Log "Updating project statistics..." "INFO"
+            try {
+                $pyCmd = if (Get-Command "python" -ErrorAction SilentlyContinue) { "python" } elseif (Get-Command "python3" -ErrorAction SilentlyContinue) { "python3" } else { $null }
+                
+                if ($pyCmd) {
+                    & $pyCmd "$statsScript" *>$null
+                    Write-Log "Project statistics updated." "SUCCESS"
+                }
+                else {
+                    Write-Log "Python not found. Skipping stats update." "WARNING"
+                }
+            }
+            catch {
+                Write-Log "Statistics update failed: $_" "WARNING"
+            }
+        }
+
         # Update version before adding files
         $currentVersion = Update-ProjectVersion -RepoPath $RepoPath
         

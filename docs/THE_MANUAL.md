@@ -34,7 +34,8 @@ No more `javac` then `java`.
 ```powershell
 d1run MyApplication.java
 ```
-*   **What it does**: Compiles the Java file to bytecode and immediately executes the class. It automatically handles the classpath for you.
+*   **What it does**: Compiles the Java file to bytecode and immediately executes the class. It automatically handles the classpath for you. 
+*   **Maven/Gradle Support**: If `d1run` detects a `pom.xml` or `build.gradle` file in your project directory, it automatically switches to using Maven or Gradle respectively to build and run your project. It enables enterprise-grade dependency management without you needing to configure it manually.
 
 #### 3. Running C++ (The Magic)
 This is where `d1run` is revolutionary.
@@ -73,6 +74,16 @@ If you mess up your data (which you will, that's part of learning), you can wipe
 
 ---
 
+## Security & Credentials
+
+Hardcoding passwords is a sin. We provide a **Credentials Manager** to keep your secrets safe.
+
+### Usage
+The bootstrap automatically rotates keys for the "Code-Ninja" bot.
+*   **Scripts**: Use `scripts\credentials-manager.ps1` to securely store and retrieve API keys or database passwords without saving them in plain text.
+
+---
+
 ## The Auto-Push Monitor
 
 **"I forgot to save to GitHub."**
@@ -90,6 +101,39 @@ The **Auto-Push Monitor** is your safety net. It runs in the background while yo
     *   Uses a special identity ("DMJ.one Code-Ninja") so you know which commits were automated.
 
 **Peace of Mind.** You focus on the code. We ensure it is never lost.
+
+---
+
+## The Dynamic Test Suite
+
+**"But does it work... everywhere?"**
+
+We have included a powerful **Dynamic Test Generator** to stress-test your code.
+
+### Usage
+Run the test generator to create chaos and verify stability:
+```powershell
+d1run tests
+```
+*   **Stress Testing**: It throws random inputs, edge cases, and massive datasets at your code.
+*   **Fuzz Testing**: Generates invalid data to see if your program crashes gracefully.
+*   **Polyglot**: Writes tests for Python, C, C++, and Java automatically.
+
+---
+
+## Project Statistics
+
+Want to see how much you've accomplished? We include a line-counting tool that provides deep insights into your codebase.
+
+### Usage
+```powershell
+d1run stats
+```
+This generates a detailed report in `docs\PROJECT_STATS.md`, showing:
+*   Total lines of code (LOC).
+*   Language breakdown (Pie charts!).
+*   Physical print metrics (How tall would the stack of paper be?).
+
 
 ---
 

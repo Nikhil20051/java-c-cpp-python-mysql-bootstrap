@@ -7,7 +7,7 @@ We designed the Universal Bootstrap to be the only tool you need. It is not just
 ## The Foundation
 *The core technologies that power your work.*
 
-*   **Java**: Enterprise-grade OpenJDK. Configured correctly.
+*   **Java**: Enterprise-grade OpenJDK. Configured correctly. **Maven** & **Gradle** support included.
 *   **Python**: Your choice of the latest runtime or version 3.8.
 *   **C / C++**: MinGW-w64 GCC & G++. Native. Fast.
 *   **MySQL**: Full server installation. Running as a resilient background service.
@@ -29,6 +29,13 @@ We realized that switching between `javac`, `g++`, and `python` breaks your flow
 *   **Silent Watcher**: A background daemon that monitors every keystroke difference.
 *   **Intelligent Threshold**: Triggers a save only when you've done significant work (default: 500 lines).
 *   **Bot Identity**: Uses a distinct "Code-Ninja" identity, keeping your personal commit history clean and professional.
+*   **Security**: Integrated **Credentials Manager** to securely handle and rotate secrets.
+
+## The Test Lab
+*Break it before they do.*
+
+*   **Dynamic Test Suite**: Automatically generates stress tests and fuzz tests.
+*   **Polyglot Testing**: Validates Python, Java, C, and C++ logic simultaneously.
 
 ## The Ecosystem
 *A living, breathing system.*

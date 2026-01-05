@@ -42,6 +42,9 @@ It is a unified execution engine. It understands your code.
 
 No flags. No configuration. Pure focus.
 
+*   **Dynamic Testing**: Built-in fuzzing and stress testing suite.
+*   **Enterprise Java**: Auto-detection for **Maven** and **Gradle** projects.
+
 ## How To Start
 
 **The 3-Step "Unboxing".**

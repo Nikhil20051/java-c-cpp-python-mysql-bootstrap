@@ -261,7 +261,7 @@ echo ========================================================
 echo.
 echo   [INFO] Launching the Auto-Push Monitor...
 echo.
-call "%~dp0monitor.bat"
+call "%~dp0monitor.bat -start"
 goto MENU
 
 :EXIT

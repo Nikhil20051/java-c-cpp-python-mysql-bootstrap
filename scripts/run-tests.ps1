@@ -556,6 +556,19 @@ if (Test-Path $dynamicTestScript) {
     & $dynamicTestScript -Language $dynamicLanguage -TestCount 5
 }
 
+# ============================================
+# RUN WORKSPACE CLEANUP
+# ============================================
+$cleanupScript = Join-Path $PSScriptRoot "clean-workspace.ps1"
+if (Test-Path $cleanupScript) {
+    Write-Host ""
+    Write-Host ("-" * 60) -ForegroundColor DarkGray
+    Write-Host "  Cleaning Up Workspace..." -ForegroundColor Yellow
+    Write-Host ("-" * 60) -ForegroundColor DarkGray
+    
+    & $cleanupScript *>$null
+}
+
 Write-Host ""
 Write-Host ("*" * 60) -ForegroundColor Green
 Write-Host "*  Test Run Complete!                                        *" -ForegroundColor Green
