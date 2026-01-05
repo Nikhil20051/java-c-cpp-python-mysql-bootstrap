@@ -52,7 +52,7 @@ jobs:
             "start.bat",
             "README.md",
             "scripts/install-dev-environment.ps1",
-            "scripts/d1run.ps1",
+            "scripts/d1run-impl.ps1",
             "database/setup-database.sql"
         )
         
