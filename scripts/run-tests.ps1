@@ -15,7 +15,7 @@
     Can test MySQL connectivity or basic language functionality
 
 .PARAMETER Language
-    Specify which language to test: java, c, cpp, python, or all
+    Specify which language to test: java, maven, gradle, c, cpp, python, or all
 
 .PARAMETER Basic
     Run basic tests without MySQL (for initial verification)
@@ -28,7 +28,7 @@
 
 param(
     [Parameter(Position = 0)]
-    [ValidateSet("java", "c", "cpp", "python", "all", "basic")]
+    [ValidateSet("java", "maven", "gradle", "c", "cpp", "python", "all", "basic")]
     [string]$Language = "all",
     
     [switch]$Basic
@@ -165,6 +165,139 @@ function Test-Java {
             Write-Host "[ERROR] MySQL Connector/J not found!" -ForegroundColor Red
             Write-Host "Please download it from: https://dev.mysql.com/downloads/connector/j/" -ForegroundColor Yellow
         }
+    }
+}
+
+function Test-Maven {
+    Write-Header "Testing Maven Project"
+    
+    $mavenDir = "$ScriptRoot\samples\java\maven-demo"
+    
+    # Check if Maven is installed
+    $mvn = Get-Command mvn -ErrorAction SilentlyContinue
+    if (-not $mvn) {
+        Write-Host "[ERROR] Maven (mvn) is not installed!" -ForegroundColor Red
+        Write-Host "Install with: choco install maven" -ForegroundColor Yellow
+        return
+    }
+    
+    if (-not (Test-Path $mavenDir)) {
+        Write-Host "[ERROR] Maven demo project not found at: $mavenDir" -ForegroundColor Red
+        return
+    }
+    
+    Write-SubHeader "Building and Running Maven Project"
+    Write-Host "Project: $mavenDir" -ForegroundColor Gray
+    Write-Host ""
+    
+    Push-Location $mavenDir
+    try {
+        # Clean, compile and run in one command
+        Write-Host "Running: mvn clean compile exec:java..." -ForegroundColor Yellow
+        Write-Host ""
+        
+        & mvn clean compile exec:java "-Dexec.mainClass=one.dmj.App" 2>&1 | ForEach-Object {
+            $line = "$_"
+            # Filter Maven noise but show app output
+            if ($line -match "^\[INFO\] ---.*exec-maven-plugin") {
+                # Skip this line, exec is starting
+            }
+            elseif ($_ -match "^\[INFO\] (Downloading|Downloaded)") {
+                Write-Host $_ -ForegroundColor Gray
+            }
+            elseif ($_ -match "^\[INFO\] (BUILD|Scanning)") {
+                # Skip general build progress
+            }
+            elseif ($_ -match "^\[ERROR\]") {
+                Write-Host $_ -ForegroundColor Red
+            }
+            elseif ($_ -match "^\[WARNING\]") {
+                Write-Host $_ -ForegroundColor Yellow
+            }
+            elseif ($line -notmatch "^\[INFO\]" -and $line.Trim()) {
+                Write-Host $line
+            }
+        }
+        
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host ""
+            Write-Host "[OK] Maven project test completed!" -ForegroundColor Green
+        }
+        else {
+            Write-Host "[ERROR] Maven build/run failed (exit code: $LASTEXITCODE)" -ForegroundColor Red
+        }
+    }
+    finally {
+        Pop-Location
+    }
+}
+
+function Test-Gradle {
+    Write-Header "Testing Gradle Project"
+    
+    $gradleDir = "$ScriptRoot\samples\java\gradle-demo"
+    
+    # Check if Gradle is installed
+    $gradle = Get-Command gradle -ErrorAction SilentlyContinue
+    if (-not $gradle) {
+        Write-Host "[ERROR] Gradle is not installed!" -ForegroundColor Red
+        Write-Host "Install with: choco install gradle" -ForegroundColor Yellow
+        return
+    }
+    
+    if (-not (Test-Path $gradleDir)) {
+        Write-Host "[ERROR] Gradle demo project not found at: $gradleDir" -ForegroundColor Red
+        return
+    }
+    
+    Write-SubHeader "Building and Running Gradle Project"
+    Write-Host "Project: $gradleDir" -ForegroundColor Gray
+    Write-Host ""
+    
+    Push-Location $gradleDir
+    try {
+        # Check for gradlew
+        $gradleCmd = if (Test-Path "gradlew.bat") { ".\gradlew.bat" } else { "gradle" }
+        
+        # Clean, build and run in one go
+        # We remove -q to see download progress, but filter noise
+        Write-Host "Running: $gradleCmd clean build run..." -ForegroundColor Yellow
+        Write-Host "(This may take a while if downloading dependencies...)" -ForegroundColor Gray
+        Write-Host ""
+        
+        & $gradleCmd clean build run 2>&1 | ForEach-Object {
+            $line = "$_"
+            # Filter output but allow important info
+            if ($line -match "Downloading") {
+                Write-Host $_ -ForegroundColor Gray
+            }
+            elseif ($_ -match "^> Task") {
+                # Skip task progress bars to keep clean
+            }
+            elseif ($_ -match "BUILD SUCCESSFUL") {
+                Write-Host $_ -ForegroundColor Green
+            }
+            elseif ($_ -match "BUILD FAILED") {
+                Write-Host $_ -ForegroundColor Red
+            }
+            elseif ($_ -match "Exception|Error:") {
+                Write-Host $_ -ForegroundColor Red
+            }
+            elseif ($line.Trim() -and $line -notmatch "^>|^To opt-out") {
+                Write-Host $line
+            }
+        }
+        
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host ""
+            Write-Host "[OK] Gradle project test completed!" -ForegroundColor Green
+        }
+        else {
+            Write-Host "[ERROR] Gradle build/run failed (exit code: $LASTEXITCODE)" -ForegroundColor Red
+        }
+    }
+    finally {
+        Pop-Location
     }
 }
 
@@ -380,6 +513,8 @@ Write-Host ("*" * 60) -ForegroundColor Magenta
 
 switch ($Language) {
     "java" { Test-Java }
+    "maven" { Test-Maven }
+    "gradle" { Test-Gradle }
     "python" { Test-Python }
     "c" { Test-C }
     "cpp" { Test-Cpp }
@@ -392,6 +527,8 @@ switch ($Language) {
     }
     "all" {
         Test-Java
+        Test-Maven
+        Test-Gradle
         Test-C
         Test-Cpp
         Test-Python
@@ -409,7 +546,13 @@ if (Test-Path $dynamicTestScript) {
     Write-Host "  Running Dynamic Test Suite (Auto-Generated Each Run)" -ForegroundColor Magenta
     Write-Host ("=" * 60) -ForegroundColor Magenta
     
-    $dynamicLanguage = if ($Language -eq "basic") { "all" } else { $Language }
+    # Map special languages to the ones dynamic-test-generator knows about
+    $dynamicLanguage = switch ($Language) {
+        "basic" { "all" }
+        "maven" { "java" }
+        "gradle" { "java" }
+        default { $Language }
+    }
     & $dynamicTestScript -Language $dynamicLanguage -TestCount 5
 }
 

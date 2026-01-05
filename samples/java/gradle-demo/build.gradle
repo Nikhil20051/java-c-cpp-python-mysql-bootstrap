@@ -1,0 +1,38 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+group = 'one.dmj'
+version = '1.0.0'
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // Apache Commons Text - String utilities
+    implementation 'org.apache.commons:commons-text:1.11.0'
+    
+    // SLF4J Simple - Logging
+    implementation 'org.slf4j:slf4j-simple:2.0.9'
+}
+
+application {
+    mainClass = 'one.dmj.App'
+}
+
+jar {
+    manifest {
+        attributes 'Main-Class': 'one.dmj.App'
+    }
+}
+
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+}

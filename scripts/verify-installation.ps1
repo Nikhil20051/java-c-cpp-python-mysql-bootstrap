@@ -13,6 +13,8 @@
 .DESCRIPTION
     This script checks for:
     - Java (JDK)
+    - Apache Maven
+    - Gradle
     - GCC/G++ (C/C++ Compiler)
     - Python
     - MySQL
@@ -114,6 +116,32 @@ catch {
     $allPassed = $false
 }
 
+# Test Maven
+Write-Host "`nChecking Java Build Tools..." -ForegroundColor Yellow
+try {
+    $mvnVersion = mvn --version 2>&1 | Select-Object -First 1
+    Write-Host "[PASS] Maven : $mvnVersion" -ForegroundColor Green
+}
+catch {
+    Write-Host "[FAIL] Maven (mvn) is not installed or not in PATH" -ForegroundColor Red
+    $allPassed = $false
+}
+
+# Test Gradle
+try {
+    $gradleVersion = gradle --version 2>&1 | Where-Object { $_ -match "Gradle" } | Select-Object -First 1
+    if ($gradleVersion) {
+        Write-Host "[PASS] $gradleVersion" -ForegroundColor Green
+    }
+    else {
+        Write-Host "[PASS] Gradle installed" -ForegroundColor Green
+    }
+}
+catch {
+    Write-Host "[FAIL] Gradle is not installed or not in PATH" -ForegroundColor Red
+    $allPassed = $false
+}
+
 # Test GCC (C Compiler)
 Write-Host "`nChecking C/C++ Compiler..." -ForegroundColor Yellow
 if (!(Test-Command "gcc" "GCC (C Compiler)")) { $allPassed = $false }
@@ -184,7 +212,7 @@ catch {
 
 # Environment Variables
 Write-Host "`nChecking Environment Variables..." -ForegroundColor Yellow
-$envVars = @("JAVA_HOME", "MYSQL_INCLUDE", "MYSQL_LIB")
+$envVars = @("JAVA_HOME", "M2_HOME", "MYSQL_INCLUDE", "MYSQL_LIB")
 foreach ($var in $envVars) {
     $value = [System.Environment]::GetEnvironmentVariable($var, "Machine")
     if ($value) {

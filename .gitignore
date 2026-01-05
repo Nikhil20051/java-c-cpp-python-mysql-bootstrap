@@ -8,10 +8,18 @@
 *.so
 *.dylib
 
+# Maven build output
+target/
+
+# Gradle build output
+build/
+.gradle/
+
 # Python
 __pycache__/
 *.py[cod]
 venv/
+.venv/
 .env
 
 # Editor/IDE

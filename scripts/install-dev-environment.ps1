@@ -26,7 +26,7 @@ if (-not $isAdmin) {
     - Chocolatey Package Manager
     - Java Development Kit (Latest OpenJDK)
     - Apache Maven (for Java dependency management)
-    - Gradle (optional, for Gradle-based projects)
+    - Gradle (for Gradle/Kotlin-based projects)
     - MinGW-w64 (GCC/G++ for C/C++)
     - Python (Latest or 3.8 - User Choice)
     - MySQL Server and MySQL Workbench
@@ -684,34 +684,15 @@ foreach ($pattern in $mavenPaths) {
     }
 }
 
-# Install Gradle (optional, for Gradle-based Java projects)
+# Install Gradle (for Gradle-based Java projects)
 $gradleCheck = Get-Command gradle -ErrorAction SilentlyContinue
 if (!$gradleCheck) {
-    Write-Host ""
-    Write-Host "Gradle is a popular build tool for Java (especially Android and Spring Boot)." -ForegroundColor Cyan
-    Write-Host "  [Y] Yes, install Gradle" -ForegroundColor White
-    Write-Host "  [N] No, skip - I'll use Maven only or install Gradle later" -ForegroundColor White
-    Write-Host ""
+    Write-Info "Installing Gradle (for Java/Kotlin project builds)..."
+    choco install gradle -y
+    Write-Success "Gradle installed!"
     
-    $installGradle = $null
-    while ($installGradle -notmatch '^[YyNn]$') {
-        $installGradle = Read-Host "Install Gradle? (Y/N)"
-        if ($installGradle -notmatch '^[YyNn]$') {
-            Write-Host "Invalid choice. Please enter Y or N." -ForegroundColor Red
-        }
-    }
-    
-    if ($installGradle -match '^[Yy]$') {
-        Write-Info "Installing Gradle..."
-        choco install gradle -y
-        Write-Success "Gradle installed!"
-        
-        # Refresh PATH
-        $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
-    }
-    else {
-        Write-Info "Skipping Gradle installation. You can install it later with: choco install gradle"
-    }
+    # Refresh PATH to pick up gradle
+    $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
 }
 else {
     Write-Success "Gradle is already installed: $(gradle --version | Select-Object -First 1)"

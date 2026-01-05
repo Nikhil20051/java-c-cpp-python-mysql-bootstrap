@@ -13,13 +13,15 @@
 .DESCRIPTION
     This script safely removes only the components installed by install-dev-environment.ps1:
     - Java (Eclipse Temurin JDK)
+    - Apache Maven
+    - Gradle
     - MinGW-w64 (GCC/G++ Compiler)
     - Python 3.12
     - MySQL Server and Workbench
     - Git
     - Visual Studio Code
     - Python packages (mysql-connector-python, pymysql)
-    - Environment variables (JAVA_HOME, MYSQL_INCLUDE, MYSQL_LIB)
+    - Environment variables (JAVA_HOME, M2_HOME, MYSQL_INCLUDE, MYSQL_LIB)
     - Test database (testdb)
     - Downloaded connectors in lib folder
 
@@ -42,7 +44,7 @@
 param(
     [switch]$All,
     [switch]$KeepData,
-    [ValidateSet("java", "mingw", "python", "mysql", "git", "vscode", "envvars", "connectors", "d1run", "all")]
+    [ValidateSet("java", "maven", "gradle", "mingw", "python", "mysql", "git", "vscode", "envvars", "connectors", "d1run", "all")]
     [string]$Component = ""
 )
 
@@ -205,6 +207,7 @@ WARNING: This script will PERMANENTLY REMOVE development tools!
 
 This uninstaller will remove ONLY components installed by this bootstrap:
   - Java (OpenJDK / Eclipse Temurin)
+  - Apache Maven and Gradle (Java build tools)
   - MinGW-w64 (C/C++ Compiler)
   - Python (any version installed by this setup) and its packages
   - MySQL Server and Workbench (if installed)
@@ -228,6 +231,8 @@ if (-not $All -and $Component -eq "") {
 
 # Track what we're uninstalling
 $uninstallJava = ($Component -eq "" -or $Component -eq "java" -or $Component -eq "all")
+$uninstallMaven = ($Component -eq "" -or $Component -eq "maven" -or $Component -eq "all")
+$uninstallGradle = ($Component -eq "" -or $Component -eq "gradle" -or $Component -eq "all")
 $uninstallMingw = ($Component -eq "" -or $Component -eq "mingw" -or $Component -eq "all")
 $uninstallPython = ($Component -eq "" -or $Component -eq "python" -or $Component -eq "all")
 $uninstallMySQL = ($Component -eq "" -or $Component -eq "mysql" -or $Component -eq "all")
@@ -320,6 +325,30 @@ if ($uninstallJava) {
     }
 }
 
+# Maven
+if ($uninstallMaven) {
+    if ($All -or (Confirm-Action "Uninstall Apache Maven?")) {
+        Write-Info "Uninstalling Maven..."
+        & choco uninstall maven -y 2>$null
+        Write-Success "Maven uninstalled"
+    }
+    else {
+        Write-Skip "Maven"
+    }
+}
+
+# Gradle
+if ($uninstallGradle) {
+    if ($All -or (Confirm-Action "Uninstall Gradle?")) {
+        Write-Info "Uninstalling Gradle..."
+        & choco uninstall gradle -y 2>$null
+        Write-Success "Gradle uninstalled"
+    }
+    else {
+        Write-Skip "Gradle"
+    }
+}
+
 # MinGW (C/C++)
 if ($uninstallMingw) {
     if ($All -or (Confirm-Action "Uninstall MinGW (C/C++ Compiler)?")) {
@@ -402,7 +431,7 @@ if ($uninstallVSCode) {
 if ($uninstallEnvVars) {
     Write-SubHeader "Step 4: Removing Environment Variables"
     
-    $envVarsToRemove = @("JAVA_HOME", "MYSQL_INCLUDE", "MYSQL_LIB")
+    $envVarsToRemove = @("JAVA_HOME", "M2_HOME", "MYSQL_INCLUDE", "MYSQL_LIB")
     
     foreach ($var in $envVarsToRemove) {
         $currentValue = [System.Environment]::GetEnvironmentVariable($var, "Machine")
@@ -525,13 +554,14 @@ Write-Host @"
 The following components have been processed:
 
   - Java (Eclipse Temurin / OpenJDK)
+  - Apache Maven and Gradle (Java build tools)
   - MinGW-w64 (C/C++ Compiler)
   - Python and packages
   - MySQL Server and Workbench (if installed)
   - Git
   - Visual Studio Code
   - d1run (Universal Code Runner)
-  - Environment variables (JAVA_HOME, MYSQL_INCLUDE, MYSQL_LIB)
+  - Environment variables (JAVA_HOME, M2_HOME, MYSQL_INCLUDE, MYSQL_LIB)
   - Downloaded MySQL connectors
   - Installation logs
   - PATH entries added by installer
