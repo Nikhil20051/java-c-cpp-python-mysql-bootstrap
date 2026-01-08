@@ -1,16 +1,15 @@
 ﻿{
-    "TargetFolder":  "D:\\experimentx\\java-c-cpp-python-mysql-bootstrap",
-    "LineThreshold":  250,
-    "CheckIntervalSeconds":  30,
-    "Enabled":  true,
-    "ExcludePatterns":  [
-                            "*.log",
-                            "*.pid",
-                            "node_modules/*",
-                            ".git/*",
-                            "*.tmp"
-                        ],
-    "BotName":  "Code Preservation Bot",
-    "BotEmail":  "preservation-bot@dmj.one",
-    "AutoSync":  true
+    "LineThreshold": 250,
+    "CheckIntervalSeconds": 10,
+    "Enabled": true,
+    "ExcludePatterns": [
+        "*.log",
+        "*.pid",
+        "node_modules/*",
+        ".git/*",
+        "*.tmp"
+    ],
+    "BotName": "Code Preservation Bot",
+    "BotEmail": "preservation-bot@dmj.one",
+    "AutoSync": true
 }
