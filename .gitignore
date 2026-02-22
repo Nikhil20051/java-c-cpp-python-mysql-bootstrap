@@ -22,6 +22,9 @@ venv/
 .venv/
 .env
 
+#Sonarqube
+.scannerwork/
+
 # Editor/IDE
 .vscode/
 .idea/
